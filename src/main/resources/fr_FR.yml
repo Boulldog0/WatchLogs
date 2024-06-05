@@ -1,0 +1,107 @@
+messages:
+  #Message affiché lorsque la sous-commande est inconnue.
+  unknown-subcommand: "&cSous-commande inconnue ! Tapez /wl help pour obtenir de l'aide !"
+  #Message affiché lorsque le joueur n'a pas la permission d'utiliser une commande.
+  have-not-permission: "&cVous n'avez pas la permission d'utiliser cette commande."
+  #Message d'aide affiché lors de l'utilisation de la commande /wl help.
+  help-message:
+    - "&6==============&7[&bWatchLogs - Aide&7]&6=============="
+    - "&7/wl help - Affiche ce message d'aide."
+    - "&7/wl tool - Active ou désactive l'outil de logs."
+    - "&7/wl database - Affiche les informations de la base de données."
+    - "&7/wl page <numéro> - Affiche les logs pour la page spécifiée."
+    - "&7/wl tpto <id> - Téléporte à l'emplacement de l'action avec l'id spécifié."
+    - "&7/wl giveitem <id> - Permet de vous donner l'item correspondant à une action précise."
+    - "&7/wl gdeath <id> - Donne l'inventaire relié à une mort précise."
+    - "&7/wl search <paramètres> - Recherche des logs avec les paramètres spécifiés."
+    - "&6========================================================"
+  #Message indiquant que l'outil de logs a été correctement supprimé.
+  tool-correctly-removed: "&aL'outil de logs à correctement été supprimé."
+  #Message indiquant que l'outil de logs a été correctement donné.
+  tool-correctly-given: "&aL'outil de logs à correctement été donné."
+  #Message affiché lorsque le joueur a un objet en main.
+  you-have-item-in-hand: "&cVous avez un objet en main."
+  #Message d'utilisation incorrecte de la commande /wl page.
+  usage-page: "&cUtilisation : /wl page <numéro>"
+  #Message d'erreur lorsque le numéro de page est négatif.
+  page-number-positive: "&cLe numéro de page doit être positif."
+  #Message d'erreur en cas de numéro de page invalide.
+  invalid-page-number: "&cNuméro de page invalide."
+  #Message d'utilisation incorrecte de la commande /wl tpto.
+  usage-tpto: "&cUtilisation : /wl tpto <id>"
+  #Message d'utilisation incorrecte de la commande /wl giveitem.
+  usage-giveitem: "&cUtilisation : /wl giveitem <id>"
+  #Message d'erreur envoyé lorsqu'un joueur tente d'utiliser le /wl giveitem alors que le module est désactivé.
+  module-item-reborn-disable: "&cLe module de regénération des items est désactivé."
+  #Message d'erreur lorsque l'id donné n'est pas un id d'action avec les items valide.
+  id-not-exists-for-item: "&cL'ID fourni n'est pas celui d'une action avec des items ou n'existe pas."
+  #Message envoyé lorsque l'item est correctement donné.
+  item-correctly-given: "&2L'item correspondant à l'ID fourni vous à été donné !"
+  #Message d'erreur lorsque l'ID est négatif.
+  id-number-positive: "&cL'ID fourni doit être positif."
+  #Message envoyé lorsqu'un joueur tente d'utiliser le /wl gdeath mais que son inventaire n'est pas vide.
+  inventory-is-not-empty: "&cVotre inventaire n'est pas vide !"
+  #Message envoyé lorsqu'aucun item n'a été trouvé pour une mort avec le /wl gdeath.
+  no-death-given-with-this-id: "&cAucune mort ou aucun item relié avec l'ID fourni n'a été trouvée."
+  #Message envoyé lorsqu'un item redonné lors du /wl gdeath sont droppés au sol
+  advertisment-item-drop-in-ground: "&cAttention : Un item à été drop au sol car vous n'aviez pas assez de place disponible dans l'inventaire !"
+  #Message d'erreur en cas d'ID supérieur au dernier de la base de données.
+  given-id-highest: "&cL'ID donné est supérieur au dernier id de la base de donnée."
+  #Message envoyé lorsque les items d'une mort sont correctement restaurés.
+  item-death-correctly-given: "&7Les items de la mort avec l'ID fourni ont correctement étés restaurés."
+  #Message d'erreur en cas de monde inexistant pour un ID spécifié.
+  world-not-exist: "&cLe monde de l'action avec l'id donné n'existe pas. Veuillez réessayer lorsque le monde de cet id est chargé."
+  #Message de confirmation de téléportation réussie.
+  correctly-teleported: "&aVous avez correctement été téléporté à l'action %s !"
+  #Message d'utilisation incorrecte de la commande /wl search.
+  usage-search: "&cUtilisation : /wl search <paramètres>"
+  #Message d'erreur lorsque le rayon spécifié est trop grand.
+  radius-too-large: "&cLe rayon donné est trop grand."
+  #Message d'erreur en cas de valeur de rayon invalide.
+  invalid-radius: "&cValeur de rayon invalide."
+  #Message d'erreur en cas de format de temps invalide.
+  invalid-time-format: "&cFormat de temps invalide."
+  #Message d'erreur en cas d'argument invalide.
+  invalid-argument: "&cArgument invalide : "
+  #Message en cas d'absence de logs correspondantes.
+  no-matching-entries: "&cAucune entrée correspondante trouvée."
+  #Message affichant les logs trouvées.
+  logs-found: "&aLogs trouvés (Page %d/%d) :"
+  #Message indiquant comment accéder à la page suivante des logs.
+  next-page: "&cTapez /wl page "
+  #Message d'erreur lorsque le numéro de page spécifié est trop élevé.
+  page-number-exceeds: "&cLe numéro de page spécifié est supérieur au nombre maximum de pages pour cette recherche."
+  #Message d'erreur lorsque le joueur n'a pas la permission d'utiliser une commande.
+  have-not-permission: "&cVous n'avez pas la permission d'utiliser cette commande."
+  #Message d'erreur lorsque le joueur essaie d'interagir avec l'outil de log dans son inventaire.
+  cant-inventory-interact-tool-item: "&cVous ne pouvez pas intéragir avec l'outil de log dans votre inventaire."
+  #Message en cas d'absence de log dans la zone.
+  no-log-found: "&cAucune log trouvée ici."
+  #Message de confirmation de suppression de l'outil de log.
+  tool-correctly-removed: "&cOutil retiré correctement !"
+
+discord:
+  #Titre de la commande d'information du bot et du plugin.
+  info_command_title: ":robot: Informations du bot et du plugin :"
+  #Nom de l'index du nom du bot.
+  info_command_bot_name: ":pencil2: Nom"
+  #Nom de l'index de l'identifiant du bot.
+  info_command_bot_id: ":scroll: ID"
+  #Nom de l'index de la latence du bot.
+  info_command_bot_latency: ":computer: Latence"
+  #Nom de l'index de la version de WatchLogs.
+  info_command_bot_watchlogs_version: ":eyes: Version de WatchLogs"
+  #Titre d'une nouvelle log dans le canal Discord.
+  log_title: ":eyes: Nouvelle log !"
+  #Nom de l'index du joueur dans une log Discord.
+  log_player: ":no_mouth: Joueur"
+  #Nom de l'index du monde dans une log Discord.
+  log_world: ":map: Monde"
+  #Nom de l'index de l'ID de l'action dans une log Discord.
+  log_action_id: ":ballot_box: ID de l'action"
+  #Nom de l'index de la position dans une log Discord.
+  log_location: ":pushpin: Position"
+  #Indication que la position est cachée par les administrateurs dans une log Discord.
+  log_location_hidden: ":x: Caché par les Administrateurs"
+  #Nom de l'index des données dans une log Discord.
+  log_data: ":scroll: Donnée à propos de cette log"

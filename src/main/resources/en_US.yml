@@ -1,0 +1,107 @@
+messages:
+  #Message displayed when an unknown subcommand is used.
+  unknown-subcommand: "&cUnknown subcommand! Type /wl help for help!"
+  #Message displayed when a player does not have permission to use a command.
+  have-not-permission: "&cYou do not have permission to use this command."
+  #Help message displayed when using the /wl help command.
+  help-message:
+    - "&6==============&7[&bWatchLogs Help&7]&6=============="
+    - "&7/wl help - Shows this help message."
+    - "&7/wl tool - Toggles the log tool."
+    - "&7/wl database - Shows database info."
+    - "&7/wl page <number> - Shows logs for the specified page."
+    - "&7/wl tpto <id> - Teleports to the location of the log entry with the specified id."
+    - "&7/wl giveitem <id> - Give item in relation of given ID."
+    - "&7/wl gdeath <id> - Give inventory linked with player death."
+    - "&7/wl search <settings> - Searches logs with the specified settings."
+    - "&6========================================================"
+  #Message confirming that the log tool has been correctly removed.
+  tool-correctly-removed: "&aThe log tool has been correctly removed."
+  #Message confirming that the log tool has been correctly given.
+  tool-correctly-given: "&aThe log tool has been correctly given."
+  #Message displayed when a player has an item in their hand.
+  you-have-item-in-hand: "&cYou have an item in your hand."
+  #Usage message for the /wl page command.
+  usage-page: "&cUsage: /wl page <number>"
+  #Error message when the page number is not positive.
+  page-number-positive: "&cPage number must be positive."
+  #Error message for an invalid page number.
+  invalid-page-number: "&cInvalid page number."
+  #Usage message for the /wl tpto command.
+  usage-tpto: "&cUsage: /wl tpto <id>"
+  #Error message when the ID number is not positive.
+  id-number-positive: "&cID number must be positive."
+  #Error message when player try to use /wl giveitem, but item reborn module is disabled.
+  module-item-reborn-disable: "&cItem reborn module is disabled."
+  #Error message sent when player try to use /wl gdeath, but his inventory is not empty.
+  inventory-is-not-empty: "&cYou'r inventory is not empty !"
+  #Message sent when any item for death found with given ID.
+  no-death-given-with-this-id: "&cAny death or any item linked with death for the given ID found."
+  #Message sent when player use /wl gdeath, but item drop in ground.
+  advertisment-item-drop-in-ground: "&cCaution : An item dropped in the ground because you don't have enough space in your inventory. !"
+  #Error message when the given ID dosnt exists for items actions.
+  id-not-exists-for-item: "&cThe given ID is not a valid item action ID or valid ID."
+  #Message sent when item is correctly given.
+  item-correctly-given: "&2Item for given ID has been correctly given."
+  #Error message when the given ID is higher than the last ID.
+  given-id-highest: "&cGiven ID is higher than the last id."
+  #Error message when the world of the given ID does not exist.
+  world-not-exist: "&cThe world of the given id does not exist. Please retry when the world of this id is loaded."
+  #Confirmation message for successful teleportation.
+  correctly-teleported: "&aYou have correctly teleported to action %s!"
+  #Usage message for the /wl search command.
+  usage-search: "&cUsage: /wl search <settings>"
+  #Usage message for the /wl giveitem command.
+  usage-giveitem: "&cUsage : /wl giveitem <id>"
+  #Error message when the given radius is too large.
+  radius-too-large: "&cThe given radius is too large."
+  #Error message for an invalid radius value.
+  invalid-radius: "&cInvalid radius value."
+  #Error message for an invalid time format.
+  invalid-time-format: "&cInvalid time format."
+  #Message sent when death items are correctly restaured with /wl gdeath 
+  item-death-correctly-given: "&7Items for Death with given ID are correctly restaured in you' inventory."
+  #Error message for an invalid argument.
+  invalid-argument: "&cInvalid argument: "
+  #Message displayed when no matching entries are found.
+  no-matching-entries: "&cNo matching entries found."
+  #Message displaying found logs with page information.
+  logs-found: "&aLogs found (Page %d/%d):"
+  #Instruction for typing the next page command.
+  next-page: "&cType /wl page "
+  #Error message when the specified page number exceeds the maximum pages.
+  page-number-exceeds: "&cSpecified page number is higher than the maximum pages for this search."
+  #Message displayed when a player does not have permission to use a command.
+  have-not-permission: "&cYou do not have permission to use this command."
+  #Error message when a player tries to interact with the tool item in inventory.
+  cant-inventory-interact-tool-item: "&cYou cannot interact with the tool item in inventory."
+  #Message displayed when no log is found in the area.
+  no-log-found: "&cNo log found here."
+  #Confirmation message for correctly removing the tool.
+  tool-correctly-removed: "&cTool correctly removed !"
+
+discord:
+  #Title of the bot and plugin information command.
+  info_command_title: ":robot: Bot and plugin informations :"
+  #Field for the bot's name.
+  info_command_bot_name: ":pencil2: Name"
+  #Field for the bot's ID.
+  info_command_bot_id: ":scroll: ID"
+  #Field for the bot's latency.
+  info_command_bot_latency: ":computer: Latency"
+  #Field for the WatchLogs version.
+  info_command_bot_watchlogs_version: ":eyes: WatchLogs Version"
+  #Title for a new log in the Discord channel.
+  log_title: ":eyes: New log !"
+  #Field for the player in a Discord log.
+  log_player: ":no_mouth: Player"
+  #Field for the world in a Discord log.
+  log_world: ":map: World"
+  #Field for the action ID in a Discord log.
+  log_action_id: ":ballot_box: Action ID"
+  #Field for the location in a Discord log.
+  log_location: ":pushpin: Location"
+  #Indication that the location is hidden by administrators in a Discord log.
+  log_location_hidden: ":x: Hiden by Administrator"
+  #Field for the data about the log in a Discord log.
+  log_data: ":scroll: Data about this log"

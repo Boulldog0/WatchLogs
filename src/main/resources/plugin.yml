@@ -1,0 +1,10 @@
+name: WatchLogs
+author: Boulldogo
+main: fr.Boulldogo.WatchLogs.Main
+version: 1.0
+api-version: 1.13
+description: Advanced logging plugin for minecraft server
+commands:
+  watchlogs:
+    description: Main command of WatchLogs plugin 
+    aliases: [wl, watchlogs, watchl, wlogs]

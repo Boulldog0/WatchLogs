@@ -1,0 +1,118 @@
+ #[EN] Enable or disable the plugin prefix in logs. [FR] Activer ou désactiver le préfixe du plugin dans les logs.
+use-prefix: true
+ #[EN] Customizable prefix for log messages. [FR] Préfixe personnalisable pour les messages de log.
+prefix: "&7[&bWatchLogs&7] "
+#[EN] Set to true to use MySQL for data storage. Set to false to use sqlite for data storage. [FR] Définir sur true pour utiliser MySQL pour le stockage des données. Définir sur false pour utiliser sqlite pour le stockage des données.
+use-mysql: true
+
+#[EN] MySQL database connection settings. Useless of touch it if you use sqlite.[FR] Paramètres de connexion à la base de données MySQL. Inutile de toucher à cela si vous utilisez sqlite.
+mysql:
+  #[EN] IP address of the MySQL server. [FR] Adresse IP du serveur MySQL.
+  ip: "dont_look_me_with_my_neighbor"
+  #[EN] Port number for MySQL connection. [FR] Port pour la connexion MySQL.
+  port: 3306
+  #[EN] Username for MySQL authentication. [FR] Nom d'utilisateur pour l'authentification MySQL.
+  username: "im_not_a_robot"
+  #[EN] Password for MySQL authentication. [FR] Mot de passe pour l'authentification MySQL.
+  password: "cupcake" 
+  #[EN] Name of the MySQL database. [FR] Nom de la base de données MySQL.
+  database: "pumpkin" 
+
+#[EN] SQLite database settings if not using MySQL. [FR] Paramètres de la base de données SQLite si MySQL n'est pas utilisé.
+sqlite:
+  #[EN] File name for the SQLite database. [FR] Nom de fichier pour la base de données SQLite.
+  file: "watchlogs.db"
+
+ #[EN] Language file to be used for messages. [FR] Fichier de langue à utiliser pour les messages.
+ #[EN] Available languages : US (English US) or FR (French). [FR] Languages disponibles : US (Anglais américain) ou FR (Français)
+lang_file: US
+#[EN] Enable or disable logging to file. [FR] Activer ou désactiver la journalisation dans un fichier.
+log-in-file: true 
+#[EN] Enable automatic deletion of old log archives. [FR] Activer la suppression automatique des anciens fichiers de log.
+delete-old-archives: true
+ #[EN] Number of days before old log files are deleted. [FR] Nombre de jours avant que les anciens fichiers de log soient supprimés.
+yml-log-file-archive-delete: 7
+#[EN] Disable automatic deletion of database logs. [FR] Désactiver la suppression automatique des logs de la base de données.
+delete-database-log: false 
+#[EN] Number of days before old database logs are deleted. [FR] Nombre de jours avant que les anciennes logs de la base de données soient supprimés.
+database-log-delete: 28 
+#[EN] Maximum number of entries shows on use /wl search or /wl page. [FR] Nombre maximum d'entrées affichés lors de l'utilisation du /wl search ou du /wl page.
+max-entries: 10
+#[EN] Maximum radius for searching logs. [FR] Rayon maximum pour la recherche dans les logs.
+#[EN] The larger the radius, the more the log search can cause the server to lag. [FR] Plus le rayon est large, plus la recherche de logs risque de faire laguer le serveur.
+max-radius-research: 5
+#[EN] Define if you want to enable rebord item command or no. [FR] Défini si vous souhaitez activer la commande de regénération des items ou non.
+#[EN] This settings enable /wl giveitem and /wl gdeath commands or no. [FR] Ce paramètre active le /wl giveitem et le /wl gdeath ou non.
+use-item-reborn-system: true
+#[EN] For /wl gdeath, define if you want to cancel command execution if player's inventory is not empty. [FR] Pour le /wl gdeath, défini si vous souhaitez arrêer l'execution de la commande si l'inventaire du joueur n'est pas vide.
+cancel-if-inventory-is-not-empty: false
+
+#[EN] List of commands that will not be logged in the logs. [FR] Liste des commandes qui ne seront pas enregistrés dans les logs.
+blacklist-commands:
+- /login
+- /register
+- /op
+
+#[EN] Settings of /wl tool. [FR] Paramètres du /wl tool.
+#[EN] Set numeric ID ONLY, and set ID of block (with item this system dosnt work). [FR] Mettez un ID NUMERIQUE UNIQUEMENT, et mettez l'id d'un bloc (le système ne fonctionnera pas avec un item)
+block-tool:
+  #[EN] Numeric ID of the block tool. [FR] ID Numérique du tool block.
+  id: 276
+  #[EN] Custom name for the block tool. [FR] Nom personnalisé pour l'outil de bloc.
+  name: "&bWatchTool" 
+
+#[EN] Enable or disable specific log events. [FR] Activer ou désactiver des événements de log spécifiques.
+enable-logs: 
+  join: true 
+  leave: true 
+  teleport: true 
+  block-place: true 
+  block-break: true 
+  container-open: true 
+  container-transaction: true 
+  item-drop: true 
+  item-pickup: true 
+  item-break: true
+  player-death: true 
+  player-death-loot: true 
+  commands: true 
+  send-message: true 
+  interact-item: true 
+  interact-block: true
+  interact-entity: true
+  block-explosion: true
+
+#[EN] Discord integration settings. [FR] Paramètres de l'intégration Discord.
+#For create discord bot, get token and more, see https://discordpy.readthedocs.io/en/stable/discord.html
+discord: 
+  #[EN] Token for the Discord bot. [FR] Token du bot Discord.
+  bot-token: ""
+  #[EN] Custom activity message for the Discord bot. [FR] Message d'activité personnalisé pour le bot Discord.
+  activity_message: ":eyes: See you with WatchLogs plugin"
+  #[EN] Enable or disable the Discord module. [FR] Activer ou désactiver le module Discord.
+  discord-module-enabled: true 
+  #[EN] Include coordinates in Discord logs. [FR] Inclure les coordonnées dans les logs Discord.
+  enable-logs-coords: false 
+  #[EN] URL for player head images in Discord logs. Set %p for set variable of player Name (Player name only, not player UUID) [FR] URL pour les images de tête de joueur dans les logs Discord. Mettez %p pour la variable du pseudo du joueur (Le pseudo uniquement, pas l'UUID)
+  url-head-image: "https://minotar.net/helm/%p/128.png"
+
+#[EN] Enable or disable specific Discord log events. [FR] Activer ou désactiver des événements de log Discord spécifiques.
+enable-discord-logs:
+  join: true 
+  leave: true 
+  teleport: true 
+  block-place: true 
+  block-break: true 
+  container-open: true 
+  container-transaction: true 
+  item-drop: true 
+  item-pickup: true 
+  item-break: true
+  player-death: true 
+  player-death-loot: true 
+  commands: true
+  send-message: true 
+  interact-item: true 
+  interact-block: true 
+  interact-entity: true 
+  block-explosion: true
