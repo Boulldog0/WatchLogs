@@ -2,7 +2,7 @@
 
 ![WatchLogs Logo](https://cdn.discordapp.com/attachments/1149061127414755470/1247908456728363018/image_2024-06-05_1506039501.png?ex=6661bcd1&is=66606b51&hm=bb316dedd7fc2ee487e822d92551eb4eab8cd181df80ac6f3a0deb33d737a5c8&)
 
-🔗 [Spigot Project](https://example.com/spigot_project)
+🔗 [Spigot Project](https://www.spigotmc.org/resources/⚙%EF%B8%8F-watchlogs-⚙%EF%B8%8F-ultimate-all-in-one-log-solution-1-7-1-20-6.117128/)
 
 Welcome to WatchLogs, the ultimate Minecraft logging plugin! Packed with an array of features, WatchLogs ensures your server management experience is seamless and efficient. Whether you're an administrator, moderator, or player, WatchLogs offers intuitive commands and robust functionalities to enhance your gameplay and server maintenance.
 
@@ -87,7 +87,7 @@ These prefixes can be used to refine your search and find specific logs you're l
 
 ## 📞 Support
 
-We provide open and responsive support for WatchLogs. Need help or have suggestions? Don't hesitate to reach out on our [Discord](https://discord.gg/ZSgYCDs3Zw) server or post review in our [Spigot Project](https://example.com/spigot_project)
+We provide open and responsive support for WatchLogs. Need help or have suggestions? Don't hesitate to reach out on our [Discord](https://discord.gg/ZSgYCDs3Zw) server or post review in our [Spigot Project](https://www.spigotmc.org/resources/⚙%EF%B8%8F-watchlogs-⚙%EF%B8%8F-ultimate-all-in-one-log-solution-1-7-1-20-6.117128/)
 
 ## 📈 Statistics bStats
 
