@@ -99,6 +99,17 @@ We provide open and responsive support for WatchLogs. Need help or have suggesti
 
 WatchLogs is released under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html). You are free to fork this project and modify it according to your needs, but you must retain the original credits and include a reference to the original project.
 
+## ⚽ Goals of download
+
+❌ 100 Downloads
+❌ 200 Downloads
+❌ 250 Downloads
+❌ 500 Downloads
+❌ 1000 Downloads
+❌ 2000 Downloads
+❌ 5000 Downloads
+❌ 10000 Downloads
+
 ## 🤖 Discord Bot Setup
 
 To utilize Discord integration features of WatchLogs, you need to set up a Discord bot. Here's a quick guide on how to do it:
