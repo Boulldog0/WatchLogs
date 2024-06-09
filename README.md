@@ -81,7 +81,9 @@ These prefixes can be used to refine your search and find specific logs you're l
 | `watchlogs.database`| Allows access to the database command.         |
 | `watchlogs.page`    | Allows access to the page command.             |
 | `watchlogs.tpto`    | Allows access to the tpto command.             |
-| `watchlogs.giveitem`| Allows access to the giveitem command.         |
+| `watchlogs.giveitem`| Allows access to the giveitem command.
+| `watchlogs.export` | Allows to export datas |
+| `watchlogs.import` | Allows to import datas |
 | `watchlogs.gdeath`  | Allows access to the gdeath command.           |
 | `watchlogs.search`  | Allows access to the search command.           |
 
