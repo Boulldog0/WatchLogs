@@ -23,7 +23,7 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import fr.Boulldogo.WatchLogs.Main;
-import fr.Boulldogo.WatchLogs.Utils.DatabaseManager;
+import fr.Boulldogo.WatchLogs.Database.DatabaseManager;
 import fr.Boulldogo.WatchLogs.Utils.PlayerSession;
 
 public class ToolListener implements Listener {

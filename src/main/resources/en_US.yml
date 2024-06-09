@@ -13,6 +13,8 @@ messages:
     - "&7/wl tpto <id> - Teleports to the location of the log entry with the specified id."
     - "&7/wl giveitem <id> - Give item in relation of given ID."
     - "&7/wl gdeath <id> - Give inventory linked with player death."
+    - "&7/wl import <filename> <use-origin-id> - Import datas by .json file."
+    - "&7/wl export <lines> <settings> - Export a certains number of lines in .json file with specified settings."
     - "&7/wl search <settings> - Searches logs with the specified settings."
     - "&6========================================================"
   #Message confirming that the log tool has been correctly removed.
@@ -41,6 +43,14 @@ messages:
   advertisment-item-drop-in-ground: "&cCaution : An item dropped in the ground because you don't have enough space in your inventory. !"
   #Error message when the given ID dosnt exists for items actions.
   id-not-exists-for-item: "&cThe given ID is not a valid item action ID or valid ID."
+  #Message sent when data export correctly finished.
+  export-success: "&2Data export successfully finished !"
+  #Message sent when an error occured the export of datas with /wl export command.
+  export-error: "&cAn error has occurred when trying to export datas !"
+  #Message sent when data import correctly finished.
+  import-success: "&2Data import successfully finished !"
+  #Message sent when an error occured the import of datas with /wl import command.
+  import-error: "&cAn error has occurred when trying to import datas !"
   #Message sent when item is correctly given.
   item-correctly-given: "&2Item for given ID has been correctly given."
   #Error message when the given ID is higher than the last ID.
@@ -53,6 +63,12 @@ messages:
   usage-search: "&cUsage: /wl search <settings>"
   #Usage message for the /wl giveitem command.
   usage-giveitem: "&cUsage : /wl giveitem <id>"
+  #Usage message for the /wl export command.
+  usage-export: "&cUsage : /wl export <number> <all/settings>"
+  #Usage message for the /wl import command.
+  usage-import: "&cUsage : /wl import <filename(without .json)> <use-original-ids(true/false)>"
+  #Message sent when command require boolean value, and player dont set it
+  is-not-boolean: "&cThis command require a boolean value (true or false ONLY)"
   #Error message when the given radius is too large.
   radius-too-large: "&cThe given radius is too large."
   #Error message for an invalid radius value.

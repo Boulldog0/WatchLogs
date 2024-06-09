@@ -18,25 +18,26 @@ Welcome to WatchLogs, the ultimate Minecraft logging plugin! Packed with an arra
 - **🏗️ Block and Container Log Search Tool**: Utilize powerful log search tools to investigate blocks and containers.
 - **📁 File Logging**: Log to text files for additional data retention options.
 - **⏱️ Automatic Log Purging**: If you want, logs can be automatically deleted after a certain number of days for efficient storage management.
-- **🏳️ Multi-Language Support**: English (US) and French languages are supported. Ask me if you want support for other languages
+- **🏳️ Multi-Language Support**: English (US) and French languages are supported. Ask me if you want support for other languages.
 - **🔒 Command Blacklist**: Blacklist specific commands from being logged.
 - **🔍 Discord /In-game Log Filtering**: Choose which logs are sent to Discord and in-game.
 - **🤖 Discord Bot Integration**: Configure the plugin and get information using Discord commands.
 - **🗃️ Database Storage**: Logs are stored in a MySQL or SQL database, providing efficient data management.
+- **🔄 Import-Export Data System**: Easily import and export data from the database.
 
 ## 🚀 Upcoming Features
 
 - [❌] Discord-based search system (Enables searching logs through Discord)
 - [❌] Extending discord commands and discord modules (Like add more discord commands)
 - [❌] Real-time log display in chat (Shows logs directly in the in-game chat)
-- [❌] Block/items blacklist for logging (Allows excluding certain blocks/items from being logged)
+- [✅] Block/items blacklist for logging (Allows excluding certain blocks/items from being logged)
 - [❌] Customizable log formatting (Enables customization of log output format)
 - [❌] Advanced permissions system (Offers more granular control over permissions)
 - [❌] Integration with other popular plugins (e.g., EssentialsX, WorldEdit, Vault or other)
 - [❌] Web-based log viewer (Provides a web interface for viewing logs)
 - [❌] Logging statistics and analytics (Gathers data on log usage and trends)
 - [❌] Backup and restore functionality (Allows backing up and restoring server logs)
-- [❌] Export/import logs feature (Enables exporting and importing log data for analysis or migration)
+- [✅] Export/import logs feature (Enables exporting and importing log data for analysis or migration)
 
 ## 🛠️ Commands & Utilities:
 
@@ -51,11 +52,13 @@ Welcome to WatchLogs, the ultimate Minecraft logging plugin! Packed with an arra
 | `/wl tpto <id>`      | Teleport to the location of the specified action.|
 | `/wl giveitem <id>`  | Gives you the item corresponding to a specific action.|
 | `/wl gdeath <id>`    | Gives the inventory related to a specific death.|
+| `/wl import <name> <originalId>` | Import .json files in the logs system.  |
+| `/wl export <lines> <parameters>` | Export logs datas with given lines number (or all for export all outputs lines) in .json file with given settings. |
 | `/wl search <parameters>` | Search logs with the specified parameters.   |
 
 **Aliases of WatchLogs commands :** `/watchlogs`, `/watchl`, `/wlogs`, `/wl`
 
-**Search command utilities :**
+**Search and export command utilities :**
 
 | Prefix | Utility                           | Example Usage                |
 |--------|-----------------------------------|------------------------------|
@@ -65,9 +68,9 @@ Welcome to WatchLogs, the ultimate Minecraft logging plugin! Packed with an arra
 | `t:`   | Search within a specific time period. | `/wl search t:30m`       |
 | `f:`   | Search within a specific filter in result category. | `/wl f:NETHERITE_SWORD` |
 | `r:`   | Search within a specific radius around you. | `/wl search r:3`       |
+| `all` (export command only) | Export alldatas from the database. | `/wl export all all` |+
 
-These prefixes can be used to refine your search and find specific logs you're looking for. Multiple filters can be used in the same search. Example : `/wl search p:Steve a:block-break r:3` or `/wl search a:block-break w:event t:30m f:DIRT`
-
+These prefixes can be used to refine your search and find specific logs you're looking for. Multiple filters can be used in the same search. Example : `/wl search p:Steve a:block-break r:3` or `/wl search a:block-break w:event t:30m f:DIRT`. For export command, its the same system, with examples such as `/wl export all a:block-break` or `/wl export 100 p:Steve r:3 f:NETHERITE_SWORD`
 
 ## 🛡️ Permissions
 

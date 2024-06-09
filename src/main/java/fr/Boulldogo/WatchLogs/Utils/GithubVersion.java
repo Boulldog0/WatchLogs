@@ -27,6 +27,7 @@ public class GithubVersion {
 
             if (isVersionOutOfDate(currentVersion, latestVersion)) {
                 plugin.getLogger().warning("New version of plugin WatchLogs is available. : " + latestVersion);
+                plugin.getLogger().warning("Downloat it at : https://www.spigotmc.org/resources/⚙%EF%B8%8F-watchlogs-⚙%EF%B8%8F-ultimate-all-in-one-log-solution-1-7-1-20-6.117128/");
             } else {
                 plugin.getLogger().info("WatchLogs plugin is up-to-date.");
             }

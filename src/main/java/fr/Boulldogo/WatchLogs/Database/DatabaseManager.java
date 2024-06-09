@@ -1,8 +1,9 @@
-package fr.Boulldogo.WatchLogs.Utils;
+package fr.Boulldogo.WatchLogs.Database;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -15,9 +16,12 @@ import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.json.JSONObject;
 
 import fr.Boulldogo.WatchLogs.Main;
 import fr.Boulldogo.WatchLogs.Discord.SetupDiscordBot;
+import fr.Boulldogo.WatchLogs.Utils.ActionUtils;
+import fr.Boulldogo.WatchLogs.Utils.ItemDataSerializer;
 
 public class DatabaseManager {
 
@@ -400,6 +404,101 @@ public class DatabaseManager {
 
     	    return logs;
     	}
+    
+    public List<String> getJsonLogs(
+    	    String world, String player, boolean useRayon, int centerX, int centerY, int centerZ, int radius,
+    	    String action, String resultFilter, String timeFilter, boolean useTimestamp
+    	) {
+    	    List<String> logs = new ArrayList<>();
+    	    StringBuilder sqlBuilder = new StringBuilder("SELECT * FROM watchlogs_logs WHERE 1 = 1");
+
+    	    List<Object> parameters = new ArrayList<>();
+
+    	    if (!world.equals("undefined")) {
+    	        sqlBuilder.append(" AND world = ?");
+    	        parameters.add(world);
+    	    }
+    	    if (!player.equals("undefined")) {
+    	        sqlBuilder.append(" AND pseudo = ?");
+    	        parameters.add(player);
+    	    }
+    	    if (!action.equals("undefined")) {
+    	        sqlBuilder.append(" AND action = ?");
+    	        parameters.add(action);
+    	    }
+    	    if (!resultFilter.equals("undefined")) {
+    	        sqlBuilder.append(" AND result LIKE ?");
+    	        parameters.add("%" + resultFilter + "%");
+    	    }
+    	    if (useTimestamp) {
+    	        sqlBuilder.append(" AND timestamp >= ?");
+    	        parameters.add(calculateTimeThreshold(timeFilter));
+    	    }
+
+    	    if (useRayon) {
+    	        int minX = centerX - radius;
+    	        int minY = centerY - radius;
+    	        int minZ = centerZ - radius;
+    	        int maxX = centerX + radius;
+    	        int maxY = centerY + radius;
+    	        int maxZ = centerZ + radius;
+
+    	        List<String> locationConditions = new ArrayList<>();
+
+    	        for (int x = minX; x <= maxX; x++) {
+    	            for (int y = minY; y <= maxY; y++) {
+    	                for (int z = minZ; z <= maxZ; z++) {
+    	                    String location = x + "/" + y + "/" + z;
+    	                    locationConditions.add("location = ?");
+    	                    parameters.add(location);
+    	                }
+    	            }
+    	        }
+
+    	        if (!locationConditions.isEmpty()) {
+    	            sqlBuilder.append(" AND (");
+    	            sqlBuilder.append(String.join(" OR ", locationConditions));
+    	            sqlBuilder.append(")");
+    	        }
+    	    }
+
+    	    sqlBuilder.append(" ORDER BY id DESC");
+
+    	    String sql = sqlBuilder.toString();
+
+    	    try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+    	        for (int i = 0; i < parameters.size(); i++) {
+    	            pstmt.setObject(i + 1, parameters.get(i));
+    	        }
+
+    	        try (ResultSet rs = pstmt.executeQuery()) {
+    	            while (rs.next()) {
+    	                int logId = rs.getInt("id");
+    	                String pseudo = rs.getString("pseudo");
+    	                String action2 = rs.getString("action");
+    	                String location = rs.getString("location");
+    	                String worldName = rs.getString("world");
+    	                String result = rs.getString("result");
+    	                String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
+
+    	                JSONObject logJson = new JSONObject();
+    	                logJson.put("id", logId);
+    	                logJson.put("pseudo", pseudo);
+    	                logJson.put("action", action2);
+    	                logJson.put("location", location);
+    	                logJson.put("world", worldName);
+    	                logJson.put("result", result);
+    	                logJson.put("timestamp", timestamp);
+
+    	                logs.add(logJson.toString());
+    	            }
+    	        }
+    	    } catch (SQLException e) {
+    	        e.printStackTrace();
+    	    }
+
+    	    return logs;
+    	}
 
     public Timestamp calculateTimeThreshold(String timeFilter) {
         Calendar cal = Calendar.getInstance();
@@ -457,8 +556,7 @@ public class DatabaseManager {
         }
 
         if(plugin.getConfig().getBoolean("log-in-file")) {
-            Calendar calendar = Calendar.getInstance();
-            String todayFileName = calendar.get(Calendar.DAY_OF_MONTH) + "-" + (calendar.get(Calendar.MONTH) + 1) + "-" + calendar.get(Calendar.YEAR);
+            SimpleDateFormat todayFileName = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
             File folder = new File(plugin.getDataFolder(), "logs");
             File todayFile = new File(folder, todayFileName + ".yml");
 
@@ -485,59 +583,111 @@ public class DatabaseManager {
             if(bot.isBotOnline()) {
             	if(isDiscordLogEnable(action)) {
                     if(plugin.getConfig().getBoolean("discord.enable_live_logs") && plugin.getConfig().contains("discord.live_logs_channel_id")) {
-                        bot.sendDirectLogs(id + 1, getFormattedNameForActions(action), result, Bukkit.getPlayer(pseudo), world, location);
+                        bot.sendDirectLogs(id + 1, ActionUtils.getFormattedNameForActions(action), result, Bukkit.getPlayer(pseudo), world, location);
                     }
             	}
             }
         }
     }
     
+    public List<String> getAllLogs() {
+	    List<String> logs = new ArrayList<>();
+
+	    String sql = "SELECT * FROM watchlogs_logs";
+
+	    try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+	        try(ResultSet rs = pstmt.executeQuery()) {
+	            while(rs.next()) {
+	                int logId = rs.getInt("id");
+	                String pseudo = rs.getString("pseudo");
+	                String action2 = rs.getString("action");
+	                String location = rs.getString("location");
+	                String worldName = rs.getString("world");
+	                String result = rs.getString("result");
+	                String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
+
+	                JSONObject logJson = new JSONObject();
+	                logJson.put("id", logId);
+	                logJson.put("pseudo", pseudo);
+	                logJson.put("action", action2);
+	                logJson.put("location", location);
+	                logJson.put("world", worldName);
+	                logJson.put("result", result);
+	                logJson.put("timestamp", timestamp);
+
+	                logs.add(logJson.toString());
+	            }
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+
+	    return logs;
+    }
+    
+    public boolean isBlockInteract(String location, String playerName) {
+        String sql = "SELECT action FROM watchlogs_logs WHERE location = ? AND pseudo = ? ORDER BY id DESC LIMIT 1";
+        List<Object> parameters = new ArrayList<>();
+        parameters.add(location);
+        parameters.add(playerName);
+        
+        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            for (int i = 0; i < parameters.size(); i++) {
+                pstmt.setObject(i + 1, parameters.get(i));
+            }
+            
+            try(ResultSet rs = pstmt.executeQuery()) {
+                if(rs.next()) {
+                    String action = rs.getString("action");
+                    return !action.equals("block-break") && !action.equals("block-place");
+                }
+            }
+        } catch(SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return false;
+    }
+
+    public void insertJsonLog(int id, String pseudo, String action, String location, String world, String result, String timestamp, boolean forceId) {
+    	if(!forceId) {
+            String sql = "INSERT INTO watchlogs_logs (id, pseudo, action, location, world, result, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                pstmt.setInt(1, id + 1);
+                pstmt.setString(2, pseudo);
+                pstmt.setString(3, action);
+                pstmt.setString(4, location);
+                pstmt.setString(5, world);
+                pstmt.setString(6, result);
+                pstmt.setTimestamp(7, Timestamp.valueOf(timestamp));
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+    	} else {
+    		String sql = "INSERT INTO watchlogs_logs (id, pseudo, action, location, world, result, timestamp) " +
+    	             "VALUES (?, ?, ?, ?, ?, ?, ?) " +
+    	             "ON DUPLICATE KEY UPDATE pseudo = VALUES(pseudo), action = VALUES(action), location = VALUES(location), world = VALUES(world), result = VALUES(result), timestamp = VALUES(timestamp)";
+
+    	try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+    	    pstmt.setInt(1, id);
+    	    pstmt.setString(2, pseudo);
+    	    pstmt.setString(3, action);
+    	    pstmt.setString(4, location);
+    	    pstmt.setString(5, world);
+    	    pstmt.setString(6, result);
+            pstmt.setTimestamp(7, Timestamp.valueOf(timestamp));
+    	    pstmt.executeUpdate();
+    	} catch (SQLException e) {
+    	    e.printStackTrace();
+    	   }
+    	}
+    }
+    
     private boolean isDiscordLogEnable(String logName) {
 		return plugin.getConfig().getBoolean("enable-discord-logs." + logName);
 	}
-
-	private String getFormattedNameForActions(String s) {
-        switch (s) {
-            case "join":
-                return "Join";
-            case "leave":
-                return "Leave";
-            case "teleport":
-                return "Teleport";
-            case "block-place":
-                return "Block Place";
-            case "block-break":
-                return "Block Break";
-            case "container-open":
-                return "Container Open";
-            case "container-transaction":
-                return "Container Transaction";
-            case "item-drop":
-                return "Item Drop";
-            case "item-pickup":
-                return "Item Pickup";
-            case "item-break":
-                return "Item Break";
-            case "player-death":
-                return "Player Death";
-            case "player-death-loot":
-                return "Player Death Loot";
-            case "commands":
-                return "Commands";
-            case "send-message":
-                return "Send Message";
-            case "interact-item":
-                return "Interact Item";
-            case "interact-block":
-                return "Interact Block";
-            case "interact-entity":
-                return "Interact Entity";
-            case "block-explosion":
-            	return "Block Explosion";
-            default:
-                return s + " (Formatted Name unknown)";
-        }
-    }
     
     public List<String> getLogs(int x, int y, int z, String world) {
         String prefix = plugin.getConfig().getBoolean("use-prefix") ? translateString(plugin.getConfig().getString("prefix")) : "";

@@ -15,11 +15,11 @@ import org.bukkit.entity.Player;
 import com.vdurmont.emoji.EmojiParser;
 
 import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.Database.DatabaseManager;
 import fr.Boulldogo.WatchLogs.Discord.Commands.InfoCommand;
 import fr.Boulldogo.WatchLogs.Discord.Commands.ProjectCommand;
 import fr.Boulldogo.WatchLogs.Discord.Commands.SetupCommand;
 import fr.Boulldogo.WatchLogs.Discord.Commands.SlashCommand;
-import fr.Boulldogo.WatchLogs.Utils.DatabaseManager;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDA.Status;
@@ -122,7 +122,7 @@ public class SetupDiscordBot extends ListenerAdapter {
         }
         builder.setAuthor(player.getName(), null, plugin.getConfig().getString("discord.url-head-image").replace("%p", player.getName()));
         builder.setColor(embedColor);
-        builder.setTitle(plugin.getLang().getString("discord.log_title") + type);
+        builder.setTitle(plugin.getLang().getString("discord.log_title") + " " +  type);
         builder.addField(plugin.getLang().getString("discord.log_player"), player.getName(), true);
         builder.addField(plugin.getLang().getString("discord.log_world"), worldName, true);
         builder.addField(plugin.getLang().getString("discord.log_action_id"), String.valueOf(id), true);

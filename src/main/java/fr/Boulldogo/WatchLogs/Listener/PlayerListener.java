@@ -30,7 +30,7 @@ public class PlayerListener implements Listener {
     	if(player.hasPermission("watchlogs.notify_update")) {
     		if(!plugin.isUpToDate()) {
     			player.sendMessage(ChatColor.RED + "A new version of WatchLogs is available ! ");
-    			player.sendMessage(ChatColor.RED + "Download it at : ");
+    			player.sendMessage(ChatColor.RED + "Download it at : https://www.spigotmc.org/resources/⚙%EF%B8%8F-watchlogs-⚙%EF%B8%8F-ultimate-all-in-one-log-solution-1-7-1-20-6.117128/");
     		}
     	}
     }

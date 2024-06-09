@@ -12,6 +12,8 @@ messages:
     - "&7/wl page <numéro> - Affiche les logs pour la page spécifiée."
     - "&7/wl tpto <id> - Téléporte à l'emplacement de l'action avec l'id spécifié."
     - "&7/wl giveitem <id> - Permet de vous donner l'item correspondant à une action précise."
+    - "&7/wl import <fichier> <utiliser l'id originel> - Importer des données via un fichier .json."
+    - "&7/wl export <lignes> <paramètres> - Exporter un certain nombre de lignes dans un fichier .json avec des paramètres spécifiés."
     - "&7/wl gdeath <id> - Donne l'inventaire relié à une mort précise."
     - "&7/wl search <paramètres> - Recherche des logs avec les paramètres spécifiés."
     - "&6========================================================"
@@ -39,6 +41,12 @@ messages:
   item-correctly-given: "&2L'item correspondant à l'ID fourni vous à été donné !"
   #Message d'erreur lorsque l'ID est négatif.
   id-number-positive: "&cL'ID fourni doit être positif."
+  #Message d'utilisation incorrecte de la commande /wl export
+  usage-export: "&cUtilisation : /wl export <nombre> <all/paramètres>"
+  #Message d'utilisation incorrecte de la commande /wk import'.
+  usage-import: "&cUtilisation : /wl import <fichier(sans .json)> <utilisation des IDs originaux(true/false)>"
+  #Message envoyé lorsqu'une commande necessite une valeur booleane et que le joueur n'en mets pas.
+  is-not-boolean: "&cCette commande requiert une valeure booleane (true ou false UNIQUEMENT)"
   #Message envoyé lorsqu'un joueur tente d'utiliser le /wl gdeath mais que son inventaire n'est pas vide.
   inventory-is-not-empty: "&cVotre inventaire n'est pas vide !"
   #Message envoyé lorsqu'aucun item n'a été trouvé pour une mort avec le /wl gdeath.
@@ -47,6 +55,14 @@ messages:
   advertisment-item-drop-in-ground: "&cAttention : Un item à été drop au sol car vous n'aviez pas assez de place disponible dans l'inventaire !"
   #Message d'erreur en cas d'ID supérieur au dernier de la base de données.
   given-id-highest: "&cL'ID donné est supérieur au dernier id de la base de donnée."
+  #Message envoyé lorsqu'une erreur survient lors de l'exportation des données avec la commande /wl export.
+  export-error: "&cUne erreur est survenue lors de la tentative d'exportation des données."
+  #Message envoyé lorsque l'exportation des données c'est correctement fini.
+  export-success: "&2L'exportation des données c'est correctement terminée !"
+  #Message envoyé lorsqu'une erreur survient lors de l'importation des données avec la commande /wl import.
+  import-error: "&cUne erreur est survenue lors de la tentative d'importation des données."
+  #Message envoyé lorsque l'importation des données c'est correctement fini.
+  import-success: "&2L'importation des données c'est correctement terminée !"
   #Message envoyé lorsque les items d'une mort sont correctement restaurés.
   item-death-correctly-given: "&7Les items de la mort avec l'ID fourni ont correctement étés restaurés."
   #Message d'erreur en cas de monde inexistant pour un ID spécifié.

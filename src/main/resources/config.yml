@@ -53,11 +53,21 @@ blacklist-commands:
 - /register
 - /op
 
+#[EN] List of blocks that will not be logged in the logs. (in all actions with blocks !) [FR] Liste des blocs qui ne seront pas enregistrés dans les logs. (dans toutes les actions avec des blocs !)
+blacklist-blocks:
+- BEDROCK
+- ENDERCHEST
+
+#[EN] List of items that will not be logged in the logs. (in all actions with items !) [FR] Liste des items qui ne seront pas enregistrés dans les logs. (dans toutes les actions avec des items !)
+blacklist-items:
+- BEDROCK
+- DIAMOND_SWORD
+
 #[EN] Settings of /wl tool. [FR] Paramètres du /wl tool.
 #[EN] Set numeric ID ONLY, and set ID of block (with item this system dosnt work). [FR] Mettez un ID NUMERIQUE UNIQUEMENT, et mettez l'id d'un bloc (le système ne fonctionnera pas avec un item)
 block-tool:
   #[EN] Numeric ID of the block tool. [FR] ID Numérique du tool block.
-  id: 276
+  id: DIAMOND_BLOCK
   #[EN] Custom name for the block tool. [FR] Nom personnalisé pour l'outil de bloc.
   name: "&bWatchTool" 
 
@@ -81,6 +91,8 @@ enable-logs:
   interact-block: true
   interact-entity: true
   block-explosion: true
+  json-import: true
+  json-export: true
 
 #[EN] Discord integration settings. [FR] Paramètres de l'intégration Discord.
 #For create discord bot, get token and more, see https://discordpy.readthedocs.io/en/stable/discord.html
@@ -116,3 +128,5 @@ enable-discord-logs:
   interact-block: true 
   interact-entity: true 
   block-explosion: true
+  json-import: true
+  json-export: true

@@ -6,7 +6,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -25,18 +27,22 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import fr.Boulldogo.WatchLogs.Commands.MainCommand;
+import fr.Boulldogo.WatchLogs.Database.DatabaseManager;
+import fr.Boulldogo.WatchLogs.Database.JsonDatabase;
 import fr.Boulldogo.WatchLogs.Discord.SetupDiscordBot;
 import fr.Boulldogo.WatchLogs.Listener.MinecraftListener;
 import fr.Boulldogo.WatchLogs.Listener.PlayerListener;
 import fr.Boulldogo.WatchLogs.Listener.ToolListener;
+import fr.Boulldogo.WatchLogs.Listener.WatchLogsListener;
 import fr.Boulldogo.WatchLogs.Utils.*;
+import net.md_5.bungee.api.ChatColor;
 
 public class Main extends JavaPlugin {
 	
 	public boolean EnableWorldGuard = true;
     private Map<Player, PlayerSession> playerSessions;
 	boolean useMySQLDatabase = this.getConfig().getBoolean("use-mysql");
-	public static String version = "1.0.0";
+	public static String version = "1.1.0";
 	private boolean isUpToDate = true;
 	public DatabaseManager databaseManager;
     private SetupDiscordBot discordBot;
@@ -47,12 +53,15 @@ public class Main extends JavaPlugin {
 	private String bukkitVersion;
     private MaterialUtils materialUtils;
     private ItemDataSerializer dataSerializer;
+    private JsonDatabase jsonDatabase;
 	
 	public void onEnable() {
+		this.getLogger().info("==============[Enable Start of WatchLogs]==============");
+		long ms = System.currentTimeMillis();
         Server server = getServer();
         Pattern pattern = Pattern.compile("(^[^\\-]*)");
         Matcher matcher = pattern.matcher(server.getBukkitVersion());
-        if (!matcher.find()) {
+        if(!matcher.find()) {
             this.getLogger().severe("Could not find Bukkit version... Disabling plugin...");
             Bukkit.getPluginManager().disablePlugin(this);
             return;
@@ -74,7 +83,6 @@ public class Main extends JavaPlugin {
 	    this.materialUtils = new MaterialUtils(this);
 	    this.dataSerializer = new ItemDataSerializer();
 	    		
-		
 		this.getLogger().info("                                         \r\n"
 				+ " __    __      _       _       __               \r\n"
 				+ "/ / /\\ \\ \\__ _| |_ ___| |__   / /  ___   __ _ ___ \r\n"
@@ -93,6 +101,8 @@ public class Main extends JavaPlugin {
 		} else {
 			this.getLogger().warning("Discord Bot Module are disabled. No bot started with plugin.");
 		}
+	    
+	    YamlUpdater updater = new YamlUpdater(this);
 		
 		String lang = this.getConfig().getString("lang_file");
 		
@@ -106,15 +116,18 @@ public class Main extends JavaPlugin {
 	        saveDefaultLangFile("en_US.yml");
 
 	        loadLangFile("en_US.yml");
+		    String[] fileToUpdate = {"config.yml", "en_US.yml"};
+		    updater.updateYamlFiles(fileToUpdate);
 		} else {
 	        saveDefaultLangFile("fr_FR.yml");
 
 	        loadLangFile("fr_FR.yml");
+		    String[] fileToUpdate = {"config.yml", "fr_FR.yml"};
+		    updater.updateYamlFiles(fileToUpdate);
 		}
 		
 		if(this.getConfig().getBoolean("log-in-file")) {
-		    Calendar calendar = Calendar.getInstance();
-			String todayFileName = calendar.get(Calendar.DAY_OF_MONTH) + "-" + (calendar.get(Calendar.MONTH) + 1) + "-" + calendar.get(Calendar.YEAR);
+            SimpleDateFormat todayFileName = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
 			
 			File folder = new File(this.getDataFolder(), "logs");
 			File todayFile = new File(folder, todayFileName + ".yml");
@@ -132,6 +145,12 @@ public class Main extends JavaPlugin {
 					e.printStackTrace();
 				}
 			}
+		}
+		
+		File importFolder = new File(this.getDataFolder(), "import");
+		
+		if(!importFolder.exists()) {
+			importFolder.mkdir();
 		}
 		
         GithubVersion versionChecker = new GithubVersion(this);
@@ -156,15 +175,20 @@ public class Main extends JavaPlugin {
 		    this.databaseManager = new DatabaseManager(url, username, password, this.getLogger(), useMySQLDatabase, this, discordBot, dataSerializer);
 	        databaseManager.connect();
 	    }
+	    this.jsonDatabase = new JsonDatabase(this, databaseManager);
 		
-		this.getLogger().info("Spigot project : ");
+		this.getLogger().info("Spigot project : https://www.spigotmc.org/resources/⚙%EF%B8%8F-watchlogs-⚙%EF%B8%8F-ultimate-all-in-one-log-solution-1-7-1-20-6.117128/");
 		this.getLogger().info("Plugin WatchLogs v1.0.0 by Boulldogo loaded correctly !");
 		
 		
 		this.getServer().getPluginManager().registerEvents(new MinecraftListener(this, databaseManager, materialUtils, dataSerializer), this);
 		this.getServer().getPluginManager().registerEvents(new ToolListener(this, databaseManager), this);
+		this.getServer().getPluginManager().registerEvents(new WatchLogsListener(this, databaseManager), this);
 		this.getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
-		this.getCommand("watchlogs").setExecutor(new MainCommand(this, databaseManager));
+		this.getCommand("watchlogs").setExecutor(new MainCommand(this, databaseManager, jsonDatabase));
+		
+		long finalTime = System.currentTimeMillis() - ms;
+		this.getLogger().info("==================[Enable WatchLogs finished in " + finalTime + "ms]==================");
 	}
 	
 	public void onDisable() {	
@@ -177,7 +201,7 @@ public class Main extends JavaPlugin {
 				+ "                                        |___/     ");
 		this.getLogger().info("Plugin WatchLogs v1.0.0 by Boulldogo unloaded correctly !");
 		
-        if (discordBot != null && discordBot.getJDA() != null) {
+        if(discordBot != null && discordBot.getJDA() != null) {
             discordBot.getJDA().shutdown();
             getLogger().info("Discord bot shut down.");
         }
@@ -195,15 +219,15 @@ public class Main extends JavaPlugin {
 	    String bukkitVersion = Bukkit.getServer().getBukkitVersion();
 	    Pattern pattern = Pattern.compile("(^[^\\-]*)");
 	    Matcher matcher = pattern.matcher(bukkitVersion);
-	    if (matcher.find()) {
+	    if(matcher.find()) {
 	        String[] versionParts = matcher.group(1).split("\\.");
 	        String[] compareParts = versionToCompare.split("\\.");
 	        for (int i = 0; i < Math.min(versionParts.length, compareParts.length); i++) {
 	            int currentVersionPart = Integer.parseInt(versionParts[i]);
 	            int currentComparePart = Integer.parseInt(compareParts[i]);
-	            if (currentVersionPart < currentComparePart) {
+	            if(currentVersionPart < currentComparePart) {
 	                return true;
-	            } else if (currentVersionPart > currentComparePart) {
+	            } else if(currentVersionPart > currentComparePart) {
 	                return false;
 	            }
 	        }
@@ -215,10 +239,10 @@ public class Main extends JavaPlugin {
 	
     private void saveDefaultLangFile(String fileName) {
         File langFile = new File(getDataFolder(), fileName);
-        if (!langFile.exists()) {
+        if(!langFile.exists()) {
             getDataFolder().mkdirs();
             try (InputStream in = getResource(fileName); OutputStream out = new FileOutputStream(langFile)) {
-                if (in == null) {
+                if(in == null) {
                     getLogger().severe("Could not find default language file in resources: " + fileName);
                     return;
                 }
@@ -236,7 +260,7 @@ public class Main extends JavaPlugin {
 
     private void loadLangFile(String fileName) {
         File langFile = new File(getDataFolder(), fileName);
-        if (langFile.exists()) {
+        if(langFile.exists()) {
             YamlConfiguration langConfig = YamlConfiguration.loadConfiguration(langFile);
             lang = langConfig;
         } else {
@@ -270,22 +294,25 @@ public class Main extends JavaPlugin {
 	}
 	
 	public void runSaveFile() {
-	    Calendar calendar = Calendar.getInstance();
-	    String todayFileName = calendar.get(Calendar.DAY_OF_MONTH) + "-" + (calendar.get(Calendar.MONTH) + 1) + "-" + calendar.get(Calendar.YEAR) + ".yml";
+        SimpleDateFormat todayFileName = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
+        
+        Calendar calendar = Calendar.getInstance();
 
-	    calendar.add(Calendar.DAY_OF_MONTH, -1);
-	    String yesterdayFileName = calendar.get(Calendar.DAY_OF_MONTH) + "-" + (calendar.get(Calendar.MONTH) + 1) + "-" + calendar.get(Calendar.YEAR) + ".yml";
+        calendar.add(Calendar.DAY_OF_MONTH, -1);
+        Date previousDay = calendar.getTime();
+        SimpleDateFormat yesFileName = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
+        String yesterdayFileName = yesFileName.format(previousDay);
 
 	    File folder = new File(this.getDataFolder(), "logs");
-	    File todayFile = new File(folder, todayFileName);
+	    File todayFile = new File(folder, todayFileName.toString());
 	    File yesterdayFile = new File(folder, yesterdayFileName);
 	    File ancientFolder = new File(folder, "archives");
 
-	    if (!ancientFolder.exists()) {
+	    if(!ancientFolder.exists()) {
 	        ancientFolder.mkdirs();
 	    }
 
-	    if (yesterdayFile.exists()) {
+	    if(yesterdayFile.exists()) {
 	        String zipFileName = yesterdayFileName.replace(".yml", ".zip");
 	        File zipFile = new File(ancientFolder, zipFileName);
 	        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile));
@@ -297,7 +324,7 @@ public class Main extends JavaPlugin {
 	                zos.write(buffer, 0, length);
 	            }
 	            zos.closeEntry();
-	            if (yesterdayFile.delete()) {
+	            if(yesterdayFile.delete()) {
 	                getLogger().info("Logs of day correctly saved and moove in: " + yesterdayFileName);
 	            } else {
 	                getLogger().warning("Failed to save log file: " + yesterdayFileName);
@@ -307,9 +334,9 @@ public class Main extends JavaPlugin {
 	        }
 	    }
 
-	    if (!todayFile.exists()) {
+	    if(!todayFile.exists()) {
 	        try {
-	            if (todayFile.createNewFile()) {
+	            if(todayFile.createNewFile()) {
 	                getLogger().info("Created new day log file: " + todayFileName);
 	            } else {
 	                getLogger().warning("Failed to create new day log file: " + todayFileName);
@@ -324,12 +351,12 @@ public class Main extends JavaPlugin {
 		int daysToKeep = this.getConfig().getInt("yml-log-file-archive-delete");
 		int daysToKeepDb = this.getConfig().getInt("database-log-delete");
 	    File folder = new File(this.getDataFolder(), "logs/archives");
-	    if (!folder.exists() || !folder.isDirectory()) {
+	    if(!folder.exists() || !folder.isDirectory()) {
 	        return;
 	    }
 
 	    File[] files = folder.listFiles();
-	    if (files == null) {
+	    if(files == null) {
 	        return;
 	    }
 
@@ -337,8 +364,8 @@ public class Main extends JavaPlugin {
 
 	    if(this.getConfig().getBoolean("delete-old-archives")) {
 		    for (File file : files) {
-		        if (file.isFile() && file.lastModified() < cutoffTime) {
-		            if (file.delete()) {
+		        if(file.isFile() && file.lastModified() < cutoffTime) {
+		            if(file.delete()) {
 		                getLogger().info("Deleted old archive: " + file.getName());
 		            } else {
 		                getLogger().warning("Failed to delete old archive: " + file.getName());
