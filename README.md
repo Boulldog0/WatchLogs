@@ -102,12 +102,19 @@ WatchLogs is released under the [GNU General Public License v3.0](https://www.gn
 ## ⚽ Goals of download
 
 ❌ 100 Downloads
+
 ❌ 200 Downloads
+
 ❌ 250 Downloads
+
 ❌ 500 Downloads
+
 ❌ 1000 Downloads
+
 ❌ 2000 Downloads
+
 ❌ 5000 Downloads
+
 ❌ 10000 Downloads
 
 ## 🤖 Discord Bot Setup
