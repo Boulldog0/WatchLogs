@@ -10,7 +10,8 @@ public class ActionUtils {
 		List<String> actionList = new ArrayList<String>();
 		actionList.addAll(Arrays.asList( "join", "leave", "teleport", "block-place", "block-break", "container-open", "container-transaction",
            "item-drop", "item-pickup", "item-break", "player-death", "player-death-loot", "commands", "send-message",
-           "interact-item", "interact-block", "interact-entity", "block-explosion", "json-import", "json-export"));
+           "interact-item", "interact-block", "interact-entity", "block-explosion", "json-import", "json-export", 
+           "website-login", "website-logout", "website-logs-search", "website-register"));
 		return actionList;
 	}
 	
@@ -56,6 +57,14 @@ public class ActionUtils {
             	return "Json Import";
             case "json-export":
             	return "Json Export";
+            case "website-login":
+            	return "Website Login";
+            case "website-logout":
+            	return "Website Logout";
+            case "website-logs-search":
+            	return "Website Logs Search";
+            case "website-register":
+            	return "Website Register";
             default:
                 return s + " (Formatted Name unknown)";
         }

@@ -11,6 +11,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -35,14 +36,14 @@ import fr.Boulldogo.WatchLogs.Listener.PlayerListener;
 import fr.Boulldogo.WatchLogs.Listener.ToolListener;
 import fr.Boulldogo.WatchLogs.Listener.WatchLogsListener;
 import fr.Boulldogo.WatchLogs.Utils.*;
-import net.md_5.bungee.api.ChatColor;
+import fr.Boulldogo.WatchLogs.Web.WebServer;
 
 public class Main extends JavaPlugin {
 	
 	public boolean EnableWorldGuard = true;
     private Map<Player, PlayerSession> playerSessions;
 	boolean useMySQLDatabase = this.getConfig().getBoolean("use-mysql");
-	public static String version = "1.1.0";
+	public static String version = "1.2.0";
 	private boolean isUpToDate = true;
 	public DatabaseManager databaseManager;
     private SetupDiscordBot discordBot;
@@ -54,13 +55,16 @@ public class Main extends JavaPlugin {
     private MaterialUtils materialUtils;
     private ItemDataSerializer dataSerializer;
     private JsonDatabase jsonDatabase;
-	
+    private WebUtils webUtils;
+    private Random random = new Random();
+    private PermissionChecker permissionChecker; 
+    
 	public void onEnable() {
 		this.getLogger().info("==============[Enable Start of WatchLogs]==============");
 		long ms = System.currentTimeMillis();
-        Server server = getServer();
+        Server mcServer = getServer();
         Pattern pattern = Pattern.compile("(^[^\\-]*)");
-        Matcher matcher = pattern.matcher(server.getBukkitVersion());
+        Matcher matcher = pattern.matcher(mcServer.getBukkitVersion());
         if(!matcher.find()) {
             this.getLogger().severe("Could not find Bukkit version... Disabling plugin...");
             Bukkit.getPluginManager().disablePlugin(this);
@@ -75,34 +79,24 @@ public class Main extends JavaPlugin {
     		saveDefaultConfig();
     		Bukkit.getServer().spigot().restart();
         }
+        
+        permissionChecker = new PermissionChecker(Bukkit.getPluginManager().isPluginEnabled("LuckPerms"));
+        if(!Bukkit.getPluginManager().isPluginEnabled("LuckPerms")) {
+        	this.getLogger().warning("LuckPerms not found. It is recommended for Website Permissions ( Without it, the permissions works only if player is online ).");
+        	this.getLogger().warning("Download LuckPerms here : https://luckperms.net");
+        }
 		
 	    playerSessions = new HashMap<>();
 	    
 	    metrics = new Metrics(this, 22048);
 	    
+	    this.webUtils = new WebUtils();
+	    
 	    this.materialUtils = new MaterialUtils(this);
 	    this.dataSerializer = new ItemDataSerializer();
-	    		
-		this.getLogger().info("                                         \r\n"
-				+ " __    __      _       _       __               \r\n"
-				+ "/ / /\\ \\ \\__ _| |_ ___| |__   / /  ___   __ _ ___ \r\n"
-				+ "\\ \\/  \\/ / _` | __/ __| '_ \\ / /  / _ \\ / _` / __|\r\n"
-				+ " \\  /\\  / (_| | || (__| | | / /__| (_) | (_| \\__ \\\r\n"
-				+ "  \\/  \\/ \\__,_|\\__\\___|_| |_\\____/\\___/ \\__, |___/\r\n"
-				+ "                                        |___/     ");
-		this.getLogger().info("WatchLogs running on Spigot/Bukkit version " + bukkitVersion);
-		if(this.getConfig().getBoolean("discord.discord-module-enabled")) {
-	        discordBot = new SetupDiscordBot(this, databaseManager);
-	        try {
-	            discordBot.startBot();
-	        } catch (LoginException e) {
-	            getLogger().severe("Failed to login to Discord: " + e.getMessage());
-	        }
-		} else {
-			this.getLogger().warning("Discord Bot Module are disabled. No bot started with plugin.");
-		}
 	    
 	    YamlUpdater updater = new YamlUpdater(this);
+	    
 		
 		String lang = this.getConfig().getString("lang_file");
 		
@@ -124,6 +118,85 @@ public class Main extends JavaPlugin {
 	        loadLangFile("fr_FR.yml");
 		    String[] fileToUpdate = {"config.yml", "fr_FR.yml"};
 		    updater.updateYamlFiles(fileToUpdate);
+		}
+	    		
+		this.getLogger().info("                                         \r\n"
+				+ " __    __      _       _       __               \r\n"
+				+ "/ / /\\ \\ \\__ _| |_ ___| |__   / /  ___   __ _ ___ \r\n"
+				+ "\\ \\/  \\/ / _` | __/ __| '_ \\ / /  / _ \\ / _` / __|\r\n"
+				+ " \\  /\\  / (_| | || (__| | | / /__| (_) | (_| \\__ \\\r\n"
+				+ "  \\/  \\/ \\__,_|\\__\\___|_| |_\\____/\\___/ \\__, |___/\r\n"
+				+ "                                        |___/     ");
+		this.getLogger().info("WatchLogs running on Spigot/Bukkit version " + bukkitVersion);
+		if(useMySQLDatabase) {
+			   String connectAdress = this.getConfig().getString("mysql.ip");
+			   int port = this.getConfig().getInt("mysql.port");
+			   String username = this.getConfig().getString("mysql.username");
+			   String password = this.getConfig().getString("mysql.password");
+			   String database = this.getConfig().getString("mysql.database");
+			
+			   String url = "jdbc:mysql://" + connectAdress + ":" + port + "/" + database;
+			
+			    this.databaseManager = new DatabaseManager(url, username, password, this.getLogger(), useMySQLDatabase, this, dataSerializer);
+		        databaseManager.connect();
+			} else {
+		        String sqliteFile = this.getConfig().getString("sqlite.file");
+		        String url = "jdbc:sqlite:" + getDataFolder().getAbsolutePath() + "/" + sqliteFile;
+				String username = this.getConfig().getString("mysql.username");
+				String password = this.getConfig().getString("mysql.password");
+			    this.databaseManager = new DatabaseManager(url, username, password, this.getLogger(), useMySQLDatabase, this, dataSerializer);
+		        databaseManager.connect();
+		    }
+		
+		if(this.getConfig().getBoolean("discord.discord-module-enabled")) {
+	        discordBot = new SetupDiscordBot(this, databaseManager);
+	        try {
+	            discordBot.startBot();
+	        } catch (LoginException e) {
+	            getLogger().severe("Failed to login to Discord: " + e.getMessage());
+	        }
+		} else {
+			this.getLogger().warning("[Discord-Module] Discord Bot Module are disabled. No bot started with plugin.");
+		}
+		
+		if (this.getConfig().getBoolean("website.enable_website_module")) {
+			
+			File secretFile = new File(getDataFolder(), "web_secret.yml");
+			
+			if(!secretFile.exists()) {
+				try {
+					secretFile.createNewFile();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			
+			YamlConfiguration secret = YamlConfiguration.loadConfiguration(secretFile);
+			
+			if(!secret.contains("secret_key")) {
+		        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz123456789*$ù^è-_-!:;/.,§$&€";
+		        StringBuilder builder = new StringBuilder(48);
+
+		        for (int i = 0; i < 48; i++) {
+		            int rdm = random.nextInt(characters.length());
+		            builder.append(characters.charAt(rdm));
+		        }
+		        secret.set("secret_key", builder.toString());
+				try {
+					secret.save(secretFile);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				getLogger().warning("[Web-Module] New authentification security key created with success !");
+			}
+			
+			String sKey = secret.getString("secret_key");
+			
+			WebServer webServer = new WebServer(this, databaseManager, sKey);
+			
+			webServer.start();
+		} else {
+		    getLogger().warning("[Web-Module] Web module is disabled. No web server started.");
 		}
 		
 		if(this.getConfig().getBoolean("log-in-file")) {
@@ -155,30 +228,10 @@ public class Main extends JavaPlugin {
 		
         GithubVersion versionChecker = new GithubVersion(this);
         versionChecker.checkForUpdates();
-		
-		if(useMySQLDatabase) {
-		   String connectAdress = this.getConfig().getString("mysql.ip");
-		   int port = this.getConfig().getInt("mysql.port");
-		   String username = this.getConfig().getString("mysql.username");
-		   String password = this.getConfig().getString("mysql.password");
-		   String database = this.getConfig().getString("mysql.database");
-		
-		   String url = "jdbc:mysql://" + connectAdress + ":" + port + "/" + database;
-		
-		    this.databaseManager = new DatabaseManager(url, username, password, this.getLogger(), useMySQLDatabase, this, discordBot, dataSerializer);
-	        databaseManager.connect();
-		} else {
-	        String sqliteFile = this.getConfig().getString("sqlite.file");
-	        String url = "jdbc:sqlite:" + getDataFolder().getAbsolutePath() + "/" + sqliteFile;
-			String username = this.getConfig().getString("mysql.username");
-			String password = this.getConfig().getString("mysql.password");
-		    this.databaseManager = new DatabaseManager(url, username, password, this.getLogger(), useMySQLDatabase, this, discordBot, dataSerializer);
-	        databaseManager.connect();
-	    }
 	    this.jsonDatabase = new JsonDatabase(this, databaseManager);
 		
 		this.getLogger().info("Spigot project : https://www.spigotmc.org/resources/⚙%EF%B8%8F-watchlogs-⚙%EF%B8%8F-ultimate-all-in-one-log-solution-1-7-1-20-6.117128/");
-		this.getLogger().info("Plugin WatchLogs v1.0.0 by Boulldogo loaded correctly !");
+		this.getLogger().info("Plugin WatchLogs v1.2.0 by Boulldogo loaded correctly !");
 		
 		
 		this.getServer().getPluginManager().registerEvents(new MinecraftListener(this, databaseManager, materialUtils, dataSerializer), this);
@@ -199,7 +252,7 @@ public class Main extends JavaPlugin {
 				+ " \\  /\\  / (_| | || (__| | | / /__| (_) | (_| \\__ \\\r\n"
 				+ "  \\/  \\/ \\__,_|\\__\\___|_| |_\\____/\\___/ \\__, |___/\r\n"
 				+ "                                        |___/     ");
-		this.getLogger().info("Plugin WatchLogs v1.0.0 by Boulldogo unloaded correctly !");
+		this.getLogger().info("Plugin WatchLogs v1.2.0 by Boulldogo unloaded correctly !");
 		
         if(discordBot != null && discordBot.getJDA() != null) {
             discordBot.getJDA().shutdown();
@@ -213,6 +266,18 @@ public class Main extends JavaPlugin {
 	
 	public boolean isUpToDate() {
 		return this.isUpToDate;
+	}
+	
+	public PermissionChecker getPermissionChecker() {
+		return permissionChecker;
+	}
+	
+	public WebUtils getWebUtils() {
+		return webUtils;
+	}
+	
+	public SetupDiscordBot getDiscordBot() {
+		return discordBot;
 	}
 	
 	public boolean isVersionLessThanOrEqual(String versionToCompare) {

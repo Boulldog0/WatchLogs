@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logs : WatchLogs Web Panel</title>
+    <link rel="icon" href="https://cdn.discordapp.com/attachments/1149061127414755470/1254102446939308223/favicon.ico?ex=667c39eb&is=667ae86b&hm=2dfddba3c20bb8417be40d4798dd14bb7314422572c4226ee7e27c9232ba1cb5&" type="image/x-icon">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            text-align: center;
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+            flex: 1;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        #searchForm {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .form-group label {
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: #444;
+            color: #fff;
+        }
+
+        .form-group.location input {
+            width: 60px;
+            margin: 0 5px;
+        }
+
+        .logout-button {
+            background-color: #a30c0c;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .logout-button:hover {
+            background-color: #850909;
+        }
+
+        #resultsCount {
+            margin: 20px 0;
+            font-size: 20px;
+        }
+
+        #logs-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px;
+            padding: 15px;
+        }
+
+        .log-entry {
+            border: 1px solid #444;
+            border-radius: 10px;
+            padding: 10px;
+            background-color: #333;
+            margin: 5px;
+            width: 80%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .log-entry div {
+            margin: 2px 0;
+        }
+
+        .header,
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background-color: #181a1f;
+            color: #fff;
+        }
+
+        .footer {
+            margin-top: auto;
+        }
+
+        .plugin-credits,
+        .credits {
+            font-size: 15px;
+        }
+
+        .credits a {
+            color: #0af;
+        }
+
+        .header {
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+           padding: 15px 30px;
+           background-color: #181a1f;
+           color: #fff;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-info span {
+            margin-right: 10px;
+        }
+
+        .header .logo img {
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        .header .user-info span {
+            margin-right: 10px;
+        }
+
+        form input[type="submit"],
+        form input[type="button"] {
+            cursor: pointer;
+            background-color: #1abc9c; 
+            font-size: 1.2em;
+            padding: 10px 20px;
+        }
+
+        form input[type="submit"]:hover,
+        form input[type="button"]:hover {
+            background-color: #16a085; 
+        }
+
+        .form-buttons {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .form-buttons input {
+            margin: 0 10px;
+        }
+
+        button {
+            margin-top: 5%;
+            background-color: #3498db;
+            color: #ffffff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #2980b9; 
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .pagination button {
+            background-color: #3498db;
+            color: #ffffff;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            margin-left: 50px;
+            margin-right: 50px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        .pagination input {
+            background-color: #393f42;
+            color: #ffffff;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+
+        .pagination button:hover {
+            background-color: #2980b9;
+        }
+        
+        .pagination input:hover {
+            background-color: #2b2f31;
+        }
+
+        .pagination input[type="number"] {
+            width: 60px;
+            text-align: center;
+        }
+
+        .disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .disabled input,
+        .disabled select,
+        .disabled button {
+            cursor: not-allowed;
+        }
+
+        .form-buttons {
+            position: relative;
+        }
+
+        .form-buttons input[disabled]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            white-space: nowrap;
+            font-size: 12px;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .form-buttons input[disabled]:hover::after {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <img src="https://cdn.discordapp.com/attachments/1149061127414755470/1247908456728363018/image_2024-06-05_1506039501.png?ex=6676d4d1&is=66758351&hm=8817d16e9aa56c7dd9e003571a0fb2f0e935c6dbdd4560776dfa113c9045b753&" alt="Logo" height="30">
+            WatchLogs Web Panel
+        </div>
+        <div class="user-info">
+            <span id="username"></span>
+            <button onclick="window.location.href = '/account'">Manage account</button>
+            <button class="logout-button" id="logout" onclick="confirmLogout()">Logout</button>
+        </div>
+    </div>
+    <div class="container">
+        <h2>Logs</h2>
+        <form id="searchForm">
+            <div class="form-group">
+                <label for="world">World:</label>
+                <select id="world" name="world"></select>
+            </div>
+            <div class="form-group">
+                <label for="player">Player:</label>
+                <input type="text" id="player" name="player" placeholder="Example : Steve, Notch, ...">
+            </div>
+            <div class="form-group location">
+                <label for="xCoord">Location:</label>
+                <div>
+                    <input type="text" id="xCoord" name="xCoord" placeholder="X">
+                    <input type="text" id="yCoord" name="yCoord" placeholder="Y">
+                    <input type="text" id="zCoord" name="zCoord" placeholder="Z">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="action">Action:</label>
+                <select id="action" name="action"></select>
+            </div>
+            <div class="form-group">
+                <label for="resultFilter">Result contains:</label>
+                <input type="text" id="resultFilter" name="resultFilter" placeholder="Example : GRASS, NETHERITE_SWORD, GOLDEN_APPLE, /wl tool, ...">
+            </div>
+            <div class="form-group">
+                <label for="timeFilter">Time filter:</label>
+                <input type="text" id="timeFilter" name="timeFilter" placeholder="Example : 1d, 2h, 10m, 1w, ...">
+            </div>
+            <div class="form-buttons">
+                <input type="submit" id="searchButton" value="Search">
+                <input type="button" value="Clear Search" onclick="fetchLogs()">
+            </div>
+        </form>
+        <div id="resultsCount"></div>
+        <div id="logs-container"></div>
+        <div id="pagination" class="pagination">
+            <button id="prevPageBtn" onclick="goToPreviousPage()">Previous Page</button>
+            <span>Page <input type="number" id="pageInput" min="1" value="1"> of <span id="totalPages">1</span></span>
+            <button id="nextPageBtn" onclick="goToNextPage()">Next page</button>
+        </div>
+        
+    </div>
+    <div class="footer">
+        <div class="plugin-credits">2024 WatchLogs plugin</div>
+        <div class="credits">Made with 💖 by Boulldogo</div>
+        <div class="credits">Spigot project: <a href="https://www.spigotmc.org/resources/⚙%EF%B8%8F-watchlogs-⚙%EF%B8%8F-ultimate-all-in-one-log-solution-1-7-1-20-6.117128/">Click here</a></div>
+        <div class="credits">Github project : <a href="https://github.com/Boulldog0/WatchLogs">Click here</a></div>
+    </div>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetchLogs();
+    getUsername();
+    populateActions();
+    populateWorlds();
+    populatePermissions(); 
+});
+
+const searchForm = document.getElementById('searchForm');
+let allLogs = [];
+let currentPage = 1;
+const logsPerPage = 20;
+
+searchForm.addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const formData = new FormData(searchForm);
+    const params = new URLSearchParams();
+
+    if (!validateTimeFilter()) {
+        return; 
+    }
+
+    for (const [key, value] of formData.entries()) {
+        if (value.trim() !== '') {
+            params.append(key, value);
+        } else {
+            params.append(key, 'undefined');
+        }
+    }
+
+    fetch(`/logs/search?${params.toString()}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(logs => {
+            allLogs = logs;
+            currentPage = 1;
+            displayLogs(currentPage);
+            updatePagination();
+        })
+        .catch(error => {
+            console.error('Error fetching logs:', error);
+        });
+});
+
+function displayLogs(page) {
+    const logsContainer = document.getElementById('logs-container');
+    logsContainer.innerHTML = '';
+    const start = (page - 1) * logsPerPage;
+    const end = start + logsPerPage;
+    const logsToDisplay = allLogs.slice(start, end);
+
+    if (logsToDisplay.length === 0) {
+        const resultsCount = document.getElementById('resultsCount');
+        resultsCount.innerHTML = `<p>No result found !</p>`;
+        logsContainer.innerHTML = '<p>No logs found.</p>';
+    } else {
+        logsToDisplay.forEach(log => {
+            const logElement = document.createElement('div');
+            logElement.classList.add('log-entry');
+            const logData = JSON.parse(log);
+            logElement.innerHTML = `
+                <div>📇 ID: ${logData.id}</div>
+                <div>🙍 Player: ${logData.pseudo}</div>
+                <div>⚒️ Action: ${logData.action}</div>
+                <div>📍 Location: ${logData.location}</div>
+                <div>🗺️ World: ${logData.world}</div>
+                <div>📜 Result: ${logData.result}</div>
+                <div>🕰️ Timestamp: ${logData.timestamp}</div>
+            `;
+            logsContainer.appendChild(logElement);
+        });
+        let size = allLogs.length;
+        const resultsCount = document.getElementById('resultsCount');
+        resultsCount.innerHTML = `<p>Total results: ${size}</p>`;
+    }
+    document.getElementById('pageInput').value = currentPage;
+}
+
+function updatePagination() {
+    const totalPages = Math.ceil(allLogs.length / logsPerPage);
+    document.getElementById('totalPages').textContent = totalPages;
+}
+
+function validateTimeFilter() {
+    const timeFilterInput = document.getElementById('timeFilter');
+    const timeFilterValue = timeFilterInput.value.trim();
+
+    const timeRegex = /^\d+[dhmw]$/;
+
+    if (timeFilterValue !== '' && !timeRegex.test(timeFilterValue)) {
+        alert('Time format in input "Time filter" is invalid. Please use formats like 1d, 2h, 10m, 1w, ...');
+        return false;
+    }
+    return true;
+}
+
+
+function fetchLogs() {
+    fetch('/logs/all')
+        .then(response => response.json())
+        .then(logs => {
+            allLogs = logs;
+            currentPage = 1;
+            displayLogs(currentPage);
+            updatePagination();
+        })
+        .catch(error => console.error('Error fetching logs:', error));
+}
+
+function getUsername() {
+    fetch('/username')
+        .then(response => response.json())
+        .then(data => {
+            const usernameElement = document.getElementById('username');
+            usernameElement.textContent = `Logged in as: ${data}`;
+        })
+        .catch(error => console.error('Error fetching username:', error));
+}
+
+function populatePermissions() {
+    fetch('/user_permissions')
+        .then(response => response.json())
+        .then(permissions => {
+            const searchForm = document.getElementById('searchForm');
+            const searchButton = document.getElementById('searchButton'); 
+            if (!permissions.canSearch) {
+                searchForm.classList.add('disabled');
+                searchButton.setAttribute('title', "You cant use search feature because you havnt permission.");
+                searchButton.setAttribute('data-tooltip', "You don't have permission to use the search feature.");
+                searchForm.querySelectorAll('input, select, button').forEach(element => {
+                    element.setAttribute('disabled', 'disabled');
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching user permissions:', error);
+        });
+}
+
+function populateActions() {
+    fetch('/logs/actions')
+        .then(response => response.json())
+        .then(actions => {
+            const actionSelect = document.getElementById('action');
+            actions.forEach(action => {
+                const option = document.createElement('option');
+                option.value = action;
+                option.text = action;
+                actionSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching actions:', error);
+        });
+}
+
+function populateWorlds() {
+    fetch('/logs/worlds')
+       .then(response => response.json())
+       .then(worlds => {
+            const worldSelect = document.getElementById('world');
+            worlds.forEach(world => {
+                const option = document.createElement('option');
+                option.value = world;
+                option.text = world;
+                worldSelect.appendChild(option);
+            });
+       })
+       .catch(error => {
+            console.error('Error fetching worlds:', error);
+       });
+}
+
+function confirmLogout() {
+    if (confirm('Are you sure you want to logout?')) {
+        window.location.href = '/logout';
+    }
+}
+
+function goToPreviousPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        displayLogs(currentPage);
+    }
+}
+
+function goToNextPage() {
+    const totalPages = Math.ceil(allLogs.length / logsPerPage);
+    if (currentPage < totalPages) {
+        currentPage++;
+        displayLogs(currentPage);
+    }
+}
+
+document.getElementById('pageInput').addEventListener('change', function() {
+    const inputPage = parseInt(this.value);
+    const totalPages = Math.ceil(allLogs.length / logsPerPage);
+    if (inputPage >= 1 && inputPage <= totalPages) {
+        currentPage = inputPage;
+        displayLogs(currentPage);
+    } else {
+        this.value = currentPage;
+    }
+});
+
+    </script>
+</body>
+</html>

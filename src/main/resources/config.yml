@@ -93,6 +93,43 @@ enable-logs:
   block-explosion: true
   json-import: true
   json-export: true
+  website-login: true
+  website-logout: true
+  website-logs-search: true
+  website-register: true
+  
+#[EN] Modify settings of the website. [FR] Modifiez les paramètres du site internet.
+website:
+   #[EN] Define if you want to use website module or no. [FR] Défini si vous souhaitez utiliser le module du site internet ou non.
+   enable_website_module: true
+   #[EN] Define if you want to enable register on the website. [FR] Défini si vous souhaitez activer l'enregistrement sur le site internet.
+   enable_register: true
+   #[EN] Define if you want to use an a register whitelist. [FR] Défini si vous souhaitez utiliser une whitelist pour l'enregistrement.
+   use-register-whitelist: false
+   #[EN] Define port that the server will use for start web server. For go to it, go on "your_ip:your_port". [FR] Défini le port que le serveur va utiliser pour démarrer le server web. Pour y aller, rendez vous sur "votre_ip":"port".
+   website_port: 8080
+   #[EN] Define the minimum of lenght of password. [FR] Défini la taille minimum d'un mort de passe.
+   minimum_lenght_of_password: 8
+   #[EN] Define if you want to require OP status for register on the website. [FR] Défini si vous souhaitez que le status OP soit obligatoire pour s'enregistrer sur le site internet.
+   player_must_be_op_for_register: true
+   #[EN] Define the maximum of account in the website. Set it to -1 for disable account limit. [FR] Défini le maximum de comptes sur le site internet. Mettez le à -1 pour désactiver la limite de compte.
+   max_account: -1
+   #[EN] Define if you want to use login whitelist on the website. [FR] Défini si vous souhaitez utiliser une whitelist pour la connexion au site internet.
+   use-login-whitelist: false
+   #[EN] Define if you want to log IPs request on the website. [FR] Défini si vous souhaitez logger les IP des requêtes sur le panel web.
+   log-request-ips: true
+   #[EN] Define if you want to hide coordinates on the logs. [FR] Défini si vous souhaitez cacher les coordonées dans les logs.
+   
+   hide-coordinates-in-logs: false
+  
+#[EN] If you use the register whitelist, set here the names of players allows to register. [FR] Si vous utiliser la whitelist d'enregistrement, mettez ici le nom des joueurs autorisés à s'enregistrer.
+website-register-whitelist:
+- STEVE
+- NOTCH
+
+#[EN] If you use the login whitelist, set here the names of players allows to login. [FR] Si vous utilisez la whitelist de connexion, mettez ici le nom des joueurs autorisés à se connecter.
+website-login-whitelist:
+- STEVE
 
 #[EN] Discord integration settings. [FR] Paramètres de l'intégration Discord.
 #For create discord bot, get token and more, see https://discordpy.readthedocs.io/en/stable/discord.html
@@ -130,3 +167,7 @@ enable-discord-logs:
   block-explosion: true
   json-import: true
   json-export: true
+  website-login: true
+  website-logout: true
+  website-logs-search: true
+  website-register: true

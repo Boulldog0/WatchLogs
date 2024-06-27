@@ -10,8 +10,6 @@ import java.util.Random;
 
 import javax.security.auth.login.LoginException;
 
-import org.bukkit.entity.Player;
-
 import com.vdurmont.emoji.EmojiParser;
 
 import fr.Boulldogo.WatchLogs.Main;
@@ -101,7 +99,7 @@ public class SetupDiscordBot extends ListenerAdapter {
         return jda;
     }
     
-    public void sendDirectLogs(int id, String type, String data, Player player, String worldName, String location) {
+    public void sendDirectLogs(int id, String type, String data, String username, String worldName, String location) {
         EmbedBuilder builder = new EmbedBuilder();
         String colorString = plugin.getConfig().getString("discord.log_embed_color");
         Color embedColor = null;
@@ -120,10 +118,10 @@ public class SetupDiscordBot extends ListenerAdapter {
         } else {
             embedColor = Color.RED; 
         }
-        builder.setAuthor(player.getName(), null, plugin.getConfig().getString("discord.url-head-image").replace("%p", player.getName()));
+        builder.setAuthor(username, null, plugin.getConfig().getString("discord.url-head-image").replace("%p", username));
         builder.setColor(embedColor);
         builder.setTitle(plugin.getLang().getString("discord.log_title") + " " +  type);
-        builder.addField(plugin.getLang().getString("discord.log_player"), player.getName(), true);
+        builder.addField(plugin.getLang().getString("discord.log_player"), username, true);
         builder.addField(plugin.getLang().getString("discord.log_world"), worldName, true);
         builder.addField(plugin.getLang().getString("discord.log_action_id"), String.valueOf(id), true);
         builder.addField(plugin.getLang().getString("discord.log_location"), plugin.getConfig().getBoolean("discord.enable-logs-coords") ? location : plugin.getLang().getString("discord.log_location_hidden"), true);

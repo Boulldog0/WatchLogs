@@ -9,6 +9,10 @@ import fr.Boulldogo.WatchLogs.Main;
 import fr.Boulldogo.WatchLogs.Database.DatabaseManager;
 import fr.Boulldogo.WatchLogs.Events.JsonDataExportEvent;
 import fr.Boulldogo.WatchLogs.Events.JsonDataImportEvent;
+import fr.Boulldogo.WatchLogs.Events.WebsiteLoginEvent;
+import fr.Boulldogo.WatchLogs.Events.WebsiteLogoutEvent;
+import fr.Boulldogo.WatchLogs.Events.WebsiteLogsRequestEvent;
+import fr.Boulldogo.WatchLogs.Events.WebsiteRegisterEvent;
 
 public class WatchLogsListener implements Listener {
 	
@@ -41,6 +45,48 @@ public class WatchLogsListener implements Listener {
 		if(isLogEnable("json-export")) {
 			Location location = player.getLocation();
 			databaseManager.insertLog(player.getName(), "json-export", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(), "Json Export in " + fileName + " with settings " + settings);
+		}
+	}
+	
+	@EventHandler
+	public void onWebsiteLoginEvent(WebsiteLoginEvent e) {
+		String username = e.getUsername();
+		String ip = e.getAdress();
+		
+		if(isLogEnable("website-login")) {
+			databaseManager.insertLog(username, "website-login", "Unknow (Non-ingame event)", "Unknow (Non-ingame event)", "Login with ip adress " + ip);
+		}
+	}
+	
+	@EventHandler
+	public void onWebsiteLogoutEvent(WebsiteLogoutEvent e) {
+		String username = e.getUsername();
+		String ip = e.getAdress();
+		
+		if(isLogEnable("website-logout")) {
+			databaseManager.insertLog(username, "website-logout", "Unknow (Non-ingame event)", "Unknow (Non-ingame event)", "Logout with ip adress " + ip);
+		}
+	}
+	
+	@EventHandler
+	public void websiteLogRequestEvent(WebsiteLogsRequestEvent e) {
+		String username = e.getUsername();
+		String search = e.getSearch();
+		String ip = e.getAdress();
+		
+		if(isLogEnable("website-logs-search")) {
+			databaseManager.insertLog(username, "website-logs-search", "Unknow (Non-ingame event)", "Unknow (Non-ingame event)", "Search request : " + search +  " (Request sent with IP " + ip + ")");
+		}
+	}
+	
+	@EventHandler
+	public void onWebsiteRegister(WebsiteRegisterEvent e) {
+		String username = e.getUsername();
+		String ip = e.getAdress();
+		boolean isOp = e.isPlayerOp();
+		
+		if(isLogEnable("website-register")) {
+			databaseManager.insertLog(username, "website-logs-search", "Unknow (Non-ingame event)", "Unknow (Non-ingame event)", "Register with ip adress " + ip + "  (Player is OP ? " + String.valueOf(isOp) + ")");
 		}
 	}
 

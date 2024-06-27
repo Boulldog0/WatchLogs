@@ -33,6 +33,8 @@ messages:
   usage-tpto: "&cUtilisation : /wl tpto <id>"
   #Message d'utilisation incorrecte de la commande /wl giveitem.
   usage-giveitem: "&cUtilisation : /wl giveitem <id>"
+  #Message d'utilisation incorrecte de la commande /wl website
+  usage-website: "&cUtilisation : /wl website <givecode/deleteaccount> <args>"
   #Message d'erreur envoyé lorsqu'un joueur tente d'utiliser le /wl giveitem alors que le module est désactivé.
   module-item-reborn-disable: "&cLe module de regénération des items est désactivé."
   #Message d'erreur lorsque l'id donné n'est pas un id d'action avec les items valide.
@@ -95,6 +97,14 @@ messages:
   no-log-found: "&cAucune log trouvée ici."
   #Message de confirmation de suppression de l'outil de log.
   tool-correctly-removed: "&cOutil retiré correctement !"
+  #Message d'utilisation de la commande /wl website deleteaccount
+  delete_account_usage: "&cUtilisation : /wl website deleteaccount <nom>"
+  #Message envoyé lorsqu'un joueur tente de supprimer un compte du site internet, mais le compte n'existe pas.
+  account_not_exists: "&cAucun compte n'a été trouvé avec ce nom !"
+  #Message sent when an account are correctly deleted.
+  account_correctly_deleted: "&aCompte correctement supprimé de la base de donnée !"
+  #Message sent when an error occured an account delete.
+  error_when_account_delete: "&cUne erreur est surevenue lors de la tentative de suppression du compte dans la base de donnée. Regardez la console pour plus d'informations."
 
 discord:
   #Titre de la commande d'information du bot et du plugin.

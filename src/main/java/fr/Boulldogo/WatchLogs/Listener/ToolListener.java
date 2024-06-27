@@ -124,7 +124,7 @@ public class ToolListener implements Listener {
             ItemStack stack = e.getCurrentItem();
             String id = plugin.getConfig().getString("block-tool.id");
             
-            if(clickedInventory.getType() == InventoryType.PLAYER && String.valueOf(stack.getType()).equals(id) && databaseManager.playerExists(player.getName()) && databaseManager.isToolEnabled(player.getName())) {
+            if(clickedInventory.getType() == InventoryType.PLAYER && stack != null && String.valueOf(stack.getType()).equals(id) && databaseManager.playerExists(player.getName()) && databaseManager.isToolEnabled(player.getName())) {
                 e.setCancelled(true);
                 player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.cant-inventory-interact-tool-item")));
             }   

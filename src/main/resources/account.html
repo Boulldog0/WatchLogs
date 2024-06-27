@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Management : WatchLogs Web Panel</title>
+    <link rel="icon" href="https://cdn.discordapp.com/attachments/1149061127414755470/1254102446939308223/favicon.ico?ex=667c39eb&is=667ae86b&hm=2dfddba3c20bb8417be40d4798dd14bb7314422572c4226ee7e27c9232ba1cb5&" type="image/x-icon">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            text-align: center;
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+            flex: 1;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .form-group label {
+            margin-bottom: 5px;
+        }
+
+        .form-group input {
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: #444;
+            color: #fff;
+        }
+
+        .form-buttons {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .form-buttons input,
+        .form-buttons button {
+            margin: 0 10px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #1abc9c; 
+            color: #fff;
+            font-size: 1.2em;
+        }
+
+        .form-buttons input:hover,
+        .form-buttons button:hover {
+            background-color: #16a085; 
+        }
+
+        .form-buttons button {
+            background-color: #a30c0c;
+        }
+
+        .form-buttons button:hover {
+            background-color: #850909;
+        }
+
+        .disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .disabled input,
+        .disabled select,
+        .disabled button {
+            cursor: not-allowed;
+        }
+
+        .header,
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background-color: #181a1f;
+            color: #fff;
+        }
+
+        .footer {
+            margin-top: auto;
+        }
+
+        .plugin-credits,
+        .credits {
+            font-size: 15px;
+        }
+
+        .credits a {
+            color: #0af;
+        }
+
+        .header .logo img {
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-info span {
+            margin-right: 10px;
+        }
+
+        .logout-button {
+            background-color: #a30c0c;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px; /* Add some margin to separate buttons */
+        }
+
+        .logout-button:hover {
+            background-color: #850909;
+        }
+
+        button {
+            background-color: #3498db;
+            color: #ffffff;
+            padding: 10px 20px;
+            margin-left: 10px; /* Add some margin to separate buttons */
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2980b9; 
+        }
+
+        .form-buttons input[disabled]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            white-space: nowrap;
+            font-size: 12px;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .form-buttons input[disabled]:hover::after {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <img src="https://cdn.discordapp.com/attachments/1149061127414755470/1247908456728363018/image_2024-06-05_1506039501.png?ex=6676d4d1&is=66758351&hm=8817d16e9aa56c7dd9e003571a0fb2f0e935c6dbdd4560776dfa113c9045b753&" alt="Logo" height="30">
+            WatchLogs Web Panel
+        </div>
+        <div class="user-info">
+            <span id="username"></span>
+            <button onclick="window.location.href = '/logs'">Return To Logs</button>
+            <button class="logout-button" id="logout" onclick="confirmLogout()">Logout</button>
+        </div>
+    </div>
+    <div class="container">
+        <h2>Account Management</h2>
+        <br>
+        <h4>-- Change Password --</h4>
+        <form id="passwordForm">
+            <div class="form-group">
+                <label for="currentPassword">Current Password:</label>
+                <input type="password" id="currentPassword" name="currentPassword" required>
+            </div>
+            <div class="form-group">
+                <label for="newPassword">New Password:</label>
+                <input type="password" id="newPassword" name="newPassword" required>
+            </div>
+            <div class="form-group">
+                <label for="confirmPassword">Confirm New Password:</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required>
+            </div>
+            <div class="form-buttons">
+                <input type="submit" value="Change Password">
+            </div>
+        </form>
+        <h4>-- Or Delete Account --</h4>
+        <div class="form-buttons">
+            <button id="deleteAccountButton" onclick="confirmDeleteAccount()">Delete Account</button>
+        </div>
+    </div>
+    <div class="footer">
+        <div class="plugin-credits">2024 WatchLogs plugin</div>
+        <div class="credits">Made with 💖 by Boulldogo</div>
+        <div class="credits">Spigot project: <a href="https://www.spigotmc.org/resources/⚙%EF%B8%8F-watchlogs-⚙%EF%B8%8F-ultimate-all-in-one-log-solution-1-7-1-20-6.117128/">Click here</a></div>
+        <div class="credits">Github project : <a href="https://github.com/Boulldog0/WatchLogs">Click here</a></div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            getUsername();
+            populatePermissions();
+        });
+
+        function getUsername() {
+            fetch('/username')
+                .then(response => response.json())
+                .then(data => {
+                    const usernameElement = document.getElementById('username');
+                    usernameElement.textContent = `Logged in as: ${data}`;
+                })
+                .catch(error => console.error('Error fetching username:', error));
+        }
+
+        function populatePermissions() {
+            fetch('/user_permissions')
+                .then(response => response.json())
+                .then(permissions => {
+                    const deleteButton = document.getElementById('deleteAccountButton');
+                    if (!permissions.canDelete) {
+                        deleteButton.classList.add('disabled');
+                        deleteButton.setAttribute('title', "You cant delete your account because you havnt permission.");
+                        deleteButton.setAttribute('data-tooltip', "You don't have permission to delete your account.");
+                        deleteButton.querySelectorAll('input, select, button').forEach(element => {
+                        element.setAttribute('disabled', 'disabled');
+                });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching user permissions:', error);
+                });
+        }
+
+        function confirmLogout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+
+        function confirmDeleteAccount() {
+            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                deleteAccount();
+            }
+        }
+
+        function deleteAccount() {
+            fetch('account/delete_account', { method: 'DELETE' })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Account deleted successfully.');
+                        window.location.href = '/logout';
+                    } else {
+                        alert('Failed to delete account. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting account:', error);
+                    alert('An error occurred. Please try again.');
+                });
+        }
+
+        const passwordForm = document.getElementById('passwordForm');
+
+        passwordForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (newPassword !== confirmPassword) {
+                alert('New password and confirmation do not match.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('currentPassword', currentPassword);
+            formData.append('newPassword', newPassword);
+
+            fetch('account/change_password', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Password changed successfully.');
+                        passwordForm.reset();
+                    } else {
+                        alert('Failed to change password. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error changing password:', error);
+                    alert('An error occurred. Please try again.');
+                });
+        });
+    </script>
+</body>
+</html>

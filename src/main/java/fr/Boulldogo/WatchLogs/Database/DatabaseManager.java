@@ -11,7 +11,6 @@ import java.util.logging.Logger;
 
 import javax.annotation.Nullable;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
@@ -21,6 +20,7 @@ import org.json.JSONObject;
 import fr.Boulldogo.WatchLogs.Main;
 import fr.Boulldogo.WatchLogs.Discord.SetupDiscordBot;
 import fr.Boulldogo.WatchLogs.Utils.ActionUtils;
+import fr.Boulldogo.WatchLogs.Utils.BCryptUtils;
 import fr.Boulldogo.WatchLogs.Utils.ItemDataSerializer;
 
 public class DatabaseManager {
@@ -32,17 +32,15 @@ public class DatabaseManager {
     private Logger logger;
     private boolean useMysql;
     private final Main plugin;
-    private final SetupDiscordBot bot;
 	public ItemDataSerializer dataSerializer;
 
-    public DatabaseManager(String url, String username, String password, Logger logger, boolean useMysql, Main plugin, SetupDiscordBot bot, ItemDataSerializer dataSerializer) {
+    public DatabaseManager(String url, String username, String password, Logger logger, boolean useMysql, Main plugin, ItemDataSerializer dataSerializer) {
         this.url = url;
         this.username = username;
         this.password = password;
         this.logger = logger;
         this.useMysql = useMysql;
         this.plugin = plugin;
-        this.bot = bot;
         this.dataSerializer = dataSerializer;
     }
 
@@ -85,21 +83,20 @@ public class DatabaseManager {
             @Override
             public void run() {
                 try {
-                    if (connection == null || connection.isClosed() || !connection.isValid(2)) {
+                    if (connection == null || connection.isClosed()) {
                         reconnect();
                     } else {
                         Statement stmt = connection.createStatement();
-                        stmt.execute("SELECT 1");
+                        stmt.execute("SELECT 1 FROM watchlogs_logs");
                         stmt.close();
                     }
                 } catch (SQLException e) {
-                    reconnect();
                     e.printStackTrace();
                     plugin.getLogger().severe("Error maintaining database connection! WatchLogs are disabled!");
                     plugin.getServer().getPluginManager().disablePlugin(plugin);
                 }
             }
-        }.runTaskTimerAsynchronously(plugin, 1200L, 1200L);
+        }.runTaskTimer(plugin, 0L, 1200L);
     }
 
     private void createTableIfNotExists() {
@@ -133,18 +130,124 @@ public class DatabaseManager {
                     + "death_id INTEGER,"
                     + "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);";
         }
+        
+        String sql4 = "CREATE TABLE IF NOT EXISTS watchlogs_accounts ("
+                 + "username TEXT(255) UNIQUE, "  
+                 + "password TEXT(255));";
 
         try (Statement stmt = connection.createStatement()) {
             stmt.executeUpdate(sql);
             stmt.executeUpdate(sql2);
+            stmt.executeUpdate(sql4);
+            logger.info("Table 'watchlogs_logs' checked/created.");
+            logger.info("Table 'watchlogs_players' checked/created.");
+            logger.info("Table 'watchlogs_accounts' checked/created.");
             if(!sql3.equals("undefinded")) {
                 stmt.executeUpdate(sql3);
                 logger.info("Table 'watchlogs_items' checked/created.");
             }
-            logger.info("Table 'watchlogs_logs' checked/created.");
-            logger.info("Table 'watchlogs_players' checked/created.");
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+    
+    public Connection getConnection() {
+    	return connection;
+    }
+    
+    public boolean authenticateUser(String username, String password) throws SQLException {
+        String query = "SELECT * FROM watchlogs_accounts WHERE username = ? AND password = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+        	String hashedPass = getHashedPassword(username);
+            stmt.setString(1, username);
+            stmt.setString(2, hashedPass);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next() && BCryptUtils.checkPassword(password, hashedPass);
+        }
+    }
+    
+    public String getHashedPassword(String username) throws SQLException {
+        String query = "SELECT password FROM watchlogs_accounts WHERE username = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, username);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("password");
+                } else {
+                    return null;
+                }
+            }
+        }
+    }
+
+    public void createUser(String username, String password) throws SQLException {   
+        String query = "INSERT INTO watchlogs_accounts (username, password) VALUES (?, ?)";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            String hashedPassword = BCryptUtils.hashPassword(password);
+            stmt.setString(1, username);
+            stmt.setString(2, hashedPassword);
+            stmt.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new SQLException("Failed to create user: " + e.getMessage());
+        }
+    }
+    
+    public boolean deleteUser(String username) {
+        String query = "DELETE FROM watchlogs_accounts WHERE username = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, username);
+            stmt.execute();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    public void changeUserPassword(String username, String password) {
+        String query = "UPDATE watchlogs_account SET password = ? WHERE username = ?";
+        
+        String hashedPassword = BCryptUtils.hashPassword(password);
+        
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, hashedPassword);
+            pstmt.setString(2, username);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public boolean isUserRegistered(String username) {
+        String query = "SELECT 1 FROM watchlogs_accounts WHERE username = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next(); 
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    public int getNumberOfAccounts() {
+        String query = "SELECT COUNT(*) FROM watchlogs_accounts";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query);
+             ResultSet rs = pstmt.executeQuery()) {
+            
+            if (rs.next()) {
+                return rs.getInt(1); 
+            } else {
+                return 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 0;
         }
     }
     
@@ -499,6 +602,79 @@ public class DatabaseManager {
 
     	    return logs;
     	}
+    
+    
+    public List<String> getWebJsonLogs(String world, String player, String loca,  String action, String resultFilter, String timeFilter, boolean useTimestamp, boolean canViewLocation) {
+        List<String> logs = new ArrayList<>();
+        
+        boolean hideLocation = plugin.getConfig().getBoolean("website.hide-coordinates-in-logs") || !canViewLocation;
+        StringBuilder sqlBuilder = new StringBuilder("SELECT * FROM watchlogs_logs WHERE 1 = 1");
+
+        List<Object> parameters = new ArrayList<>();
+
+        if(world != null && !world.equals("undefined")) {
+            sqlBuilder.append(" AND world = ?");
+            parameters.add(world);
+        }
+        if(player != null && !player.equals("undefined")) {
+            sqlBuilder.append(" AND pseudo = ?");
+            parameters.add(player);
+        }
+        if(loca != null && !loca.equals("%/%/%")) {
+            sqlBuilder.append(" AND location = ?");
+            parameters.add(loca);
+        }
+        if(action != null && !action.equals("undefined")) {
+            sqlBuilder.append(" AND action = ?");
+            parameters.add(action);
+        }
+        if(resultFilter != null && !resultFilter.equals("undefined")) {
+            sqlBuilder.append(" AND result LIKE ?");
+            parameters.add("%" + resultFilter + "%");
+        }
+        
+        if(useTimestamp) {
+            sqlBuilder.append(" AND timestamp >= ?");
+            parameters.add(calculateTimeThreshold(timeFilter));
+        }
+
+        sqlBuilder.append(" ORDER BY id DESC");
+
+        String sql = sqlBuilder.toString();
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            for (int i = 0; i < parameters.size(); i++) {
+                pstmt.setObject(i + 1, parameters.get(i));
+            }
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    int logId = rs.getInt("id");
+                    String pseudo = rs.getString("pseudo");
+                    String action2 = rs.getString("action");
+                    String location = hideLocation ? "Hide by administrator" : rs.getString("location");
+                    String worldName = rs.getString("world");
+                    String result = rs.getString("result");
+                    String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
+
+                    JSONObject logJson = new JSONObject();
+                    logJson.put("id", logId);
+                    logJson.put("pseudo", pseudo);
+                    logJson.put("action", action2);
+                    logJson.put("location", location);
+                    logJson.put("world", worldName);
+                    logJson.put("result", result);
+                    logJson.put("timestamp", timestamp);
+
+                    logs.add(logJson.toString());
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return logs;
+    }
 
     public Timestamp calculateTimeThreshold(String timeFilter) {
         Calendar cal = Calendar.getInstance();
@@ -580,50 +756,54 @@ public class DatabaseManager {
         }
 
         if(plugin.getConfig().getBoolean("discord.discord-module-enabled")) {
+        	SetupDiscordBot bot = plugin.getDiscordBot();
             if(bot.isBotOnline()) {
             	if(isDiscordLogEnable(action)) {
                     if(plugin.getConfig().getBoolean("discord.enable_live_logs") && plugin.getConfig().contains("discord.live_logs_channel_id")) {
-                        bot.sendDirectLogs(id + 1, ActionUtils.getFormattedNameForActions(action), result, Bukkit.getPlayer(pseudo), world, location);
+                        bot.sendDirectLogs(id + 1, ActionUtils.getFormattedNameForActions(action), result, pseudo, world, location);
                     }
             	}
             }
         }
     }
-    
-    public List<String> getAllLogs() {
-	    List<String> logs = new ArrayList<>();
 
-	    String sql = "SELECT * FROM watchlogs_logs";
+    public List<String> getAllLogs(boolean isWebsiteRequest, boolean canViewLocation) throws SQLException {
+        if (connection == null || connection.isClosed() || !connection.isValid(2)) {
+            reconnect(); 
+        }
+        List<String> logs = new ArrayList<>();
 
-	    try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        boolean hideLocation = plugin.getConfig().getBoolean("website.hide-coordinates-in-logs") || !canViewLocation;
+        String sql = "SELECT * FROM watchlogs_logs ORDER BY id DESC";
 
-	        try(ResultSet rs = pstmt.executeQuery()) {
-	            while(rs.next()) {
-	                int logId = rs.getInt("id");
-	                String pseudo = rs.getString("pseudo");
-	                String action2 = rs.getString("action");
-	                String location = rs.getString("location");
-	                String worldName = rs.getString("world");
-	                String result = rs.getString("result");
-	                String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    int logId = rs.getInt("id");
+                    String pseudo = rs.getString("pseudo");
+                    String action = rs.getString("action");
+                    String location = hideLocation ? "Hide by administrator" : rs.getString("location");
+                    String worldName = rs.getString("world");
+                    String result = rs.getString("result");
+                    String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
 
-	                JSONObject logJson = new JSONObject();
-	                logJson.put("id", logId);
-	                logJson.put("pseudo", pseudo);
-	                logJson.put("action", action2);
-	                logJson.put("location", location);
-	                logJson.put("world", worldName);
-	                logJson.put("result", result);
-	                logJson.put("timestamp", timestamp);
+                    JSONObject logJson = new JSONObject();
+                    logJson.put("id", logId);
+                    logJson.put("pseudo", pseudo);
+                    logJson.put("action", action);
+                    logJson.put("location", location);
+                    logJson.put("world", worldName);
+                    logJson.put("result", result);
+                    logJson.put("timestamp", timestamp);
 
-	                logs.add(logJson.toString());
-	            }
-	        }
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    }
+                    logs.add(logJson.toString());
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
-	    return logs;
+        return logs;
     }
     
     public boolean isBlockInteract(String location, String playerName) {

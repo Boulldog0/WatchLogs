@@ -8,6 +8,7 @@ Welcome to WatchLogs, the ultimate Minecraft logging plugin! Packed with an arra
 
 ## 🌟 Key Features
 
+- **💻 Web panel** : You can search and view all logs into an interactive and fully configurable web panel.
 - **🔍 Intuitive Log Search**: Easily search logs using intuitive commands.
 - **📝 Extensive Logging**: Record various types of logs for comprehensive server monitoring.
 - **📡 Discord Logging System**: Seamlessly integrate with Discord for real-time log updates.
@@ -34,9 +35,8 @@ Welcome to WatchLogs, the ultimate Minecraft logging plugin! Packed with an arra
 - [❌] Customizable log formatting (Enables customization of log output format)
 - [❌] Advanced permissions system (Offers more granular control over permissions)
 - [❌] Integration with other popular plugins (e.g., EssentialsX, WorldEdit, Vault or other)
-- [❌] Web-based log viewer (Provides a web interface for viewing logs)
+- [✅] Web-based log viewer (Provides a web interface for viewing logs)
 - [❌] Logging statistics and analytics (Gathers data on log usage and trends)
-- [❌] Backup and restore functionality (Allows backing up and restoring server logs)
 - [✅] Export/import logs feature (Enables exporting and importing log data for analysis or migration)
 
 ## 🛠️ Commands & Utilities:
@@ -55,6 +55,7 @@ Welcome to WatchLogs, the ultimate Minecraft logging plugin! Packed with an arra
 | `/wl import <name> <originalId>` | Import .json files in the logs system.  |
 | `/wl export <lines> <parameters>` | Export logs datas with given lines number (or all for export all outputs lines) in .json file with given settings. |
 | `/wl search <parameters>` | Search logs with the specified parameters.   |
+| `/wl website <givecode/deleteaccount>` | Give security code or delete account from the website. |
 
 **Aliases of WatchLogs commands :** `/watchlogs`, `/watchl`, `/wlogs`, `/wl`
 
@@ -84,6 +85,15 @@ These prefixes can be used to refine your search and find specific logs you're l
 | `watchlogs.giveitem`| Allows access to the giveitem command.         |
 | `watchlogs.gdeath`  | Allows access to the gdeath command.           |
 | `watchlogs.search`  | Allows access to the search command.           |
+| `watchlogs.website.code`| Allows to obtain the website register security code. |
+| `watchlogs.website.delete_account`| Allows to delete account from the website. |
+| `watchlogs.website.view_location`| Allows to show location in the website logs. |
+| `watchlogs.website.search_permission`| Allows to use the search tool in the website. |
+| `watchlogs.website.delete_permission`| Allows to delete their account on the website. |
+
+## 💻 Website Feature 
+
+Our website is self-hosted directly in the plugin. He can show you in a confortable interface all logs you want for all your moderation and administration tasks. Account passwords are crypted with BCrypt library. You can research logs like the in-game command dirrectly in the website with interactive search tool, and you can know when a player search things in the panel with the new logs.
 
 ## 📞 Support
 

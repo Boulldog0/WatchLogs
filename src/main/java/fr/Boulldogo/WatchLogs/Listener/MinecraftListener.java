@@ -74,7 +74,6 @@ public class MinecraftListener implements Listener {
 	public void playerTeleportEvent(PlayerTeleportEvent e) {
 		if(e.isCancelled()) return;
 		Player player = e.getPlayer();
-		String eventName = e.getEventName();
 		
 		if(isLogEnable("teleport")) {
 			Location location = e.getTo();

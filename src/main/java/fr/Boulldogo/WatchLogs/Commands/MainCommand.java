@@ -1,9 +1,11 @@
 package fr.Boulldogo.WatchLogs.Commands;
 
 import java.io.File;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -27,12 +29,14 @@ import fr.Boulldogo.WatchLogs.Database.JsonDatabase;
 import fr.Boulldogo.WatchLogs.Listener.ToolListener;
 import fr.Boulldogo.WatchLogs.Utils.ActionUtils;
 import fr.Boulldogo.WatchLogs.Utils.PlayerSession;
+import fr.Boulldogo.WatchLogs.Utils.WebUtils;
 
 public class MainCommand implements CommandExecutor, TabCompleter{
     
     public final Main plugin;
     public DatabaseManager databaseManager;
     public JsonDatabase jsonDatabase;
+    private Random random = new Random();
     
     public MainCommand(Main plugin, DatabaseManager databaseManager, JsonDatabase jsonDatabase) {
         this.plugin = plugin;
@@ -187,6 +191,72 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             }
             
             regenerateItemsForDeath(player, id);
+        } else if(subCommand.equals("website")) {
+            if(!player.hasPermission("watchlogs.website")) {
+                player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.have-not-permission")));
+                return true;
+            }
+            
+            if(args.length < 2) {
+            	player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.usage-website")));
+            	return true;
+            }
+            
+            String command = args[1];
+            
+            if(!command.equals("givecode") && !command.equals("deleteaccount")) {
+            	player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.usage-website")));
+            	return true;
+            }
+            
+            if(command.equals("givecode")) {
+                if(!player.hasPermission("watchlogs.website.code")) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.have-not-permission")));
+                    return true;
+                }
+                
+                WebUtils utils = plugin.getWebUtils();
+            	
+            	if(utils.isPlayerExists(player)) {
+            		String code = utils.getPlayerCode(player);
+            		player.sendMessage(prefix + ChatColor.GREEN + "Website secuity code : " + code);
+            		return true;
+            	} else {
+                    StringBuilder code = new StringBuilder(12);
+                    for (int i = 0; i < 12; i++) {
+                    	String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                        int index = random.nextInt(CHARACTERS.length());
+                        code.append(CHARACTERS.charAt(index));
+                    }
+                    utils.setPlayerCode(player, code.toString());
+            		player.sendMessage(prefix + ChatColor.GREEN + "New website secuity code : " + code);
+            	}
+            } else if(command.equals("deleteaccount")) {
+                if(!player.hasPermission("watchlogs.website.delete_account")) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.have-not-permission")));
+                    return true;
+                }
+                
+            	if(args.length < 2) {
+            		player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.delete_account_usage")));
+            		return true;
+            	}
+            	
+            	String username = args[1];
+            	
+            	if(!databaseManager.isUserRegistered(username)) {
+            		player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.account_not_exists")));
+            		return true;
+            	}
+            	
+            	if(databaseManager.deleteUser(username)) {
+            		player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.account_correctly_deleted")));
+            		return true;
+            	} else {
+            		player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.error_when_account_delete")));
+            		return true;
+            	}
+            }
         } else if(subCommand.equals("database")) {
             if(!player.hasPermission("watchlogs.database")) {
                 player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.have-not-permission")));
@@ -279,7 +349,12 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                     return true;
                 }
             } else {
-            	List<String> jsonList = databaseManager.getAllLogs();
+            	List<String> jsonList = new ArrayList<>();
+				try {
+					jsonList = databaseManager.getAllLogs(false, true);
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
             	
             	boolean export = jsonDatabase.exportDatabaseDatas(lines.equals("all") ? jsonList.size() : Integer.parseInt(lines), jsonList, "all", player);
                 if(export) {
@@ -478,7 +553,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
         List<String> completions = new ArrayList<>();
 
         if(args.length == 1) {
-            List<String> subCommands = Arrays.asList("help", "tool", "database", "page", "tpto", "reload", "search", "import", "export", "giveitem", "gdeath");
+            List<String> subCommands = Arrays.asList("help", "tool", "database", "page", "tpto", "reload", "search", "import", "export", "giveitem", "gdeath", "website");
             String currentArg = args[0].toLowerCase();
             completions = subCommands.stream()
                 .filter(subCommand -> subCommand.startsWith(currentArg))
@@ -495,6 +570,8 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                 case "import":
                     completions = handleImportTabCompletion(args);
                     break;
+                case "website":
+                	completions = Arrays.asList("givecode", "deleteaccount");
                 default:
                     break;
             }
@@ -717,6 +794,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             || s.equals("import")
             || s.equals("gdeath")
             || s.equals("search")
+            || s.equals("website")
             || s.equals("giveitem")
             || s.equals("reloadconfig");
     }

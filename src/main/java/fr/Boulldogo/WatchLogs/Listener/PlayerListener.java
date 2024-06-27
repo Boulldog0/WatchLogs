@@ -7,6 +7,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.Utils.WebUtils;
 import net.md_5.bungee.api.ChatColor;
 
 public class PlayerListener implements Listener {
@@ -21,6 +22,12 @@ public class PlayerListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         plugin.removePlayerSession(player);
+        
+        WebUtils webUtils = plugin.getWebUtils();
+        
+        if(webUtils.isPlayerExists(player)) {
+        	webUtils.deletePlayerCode(player);
+        }
     }
     
     @EventHandler

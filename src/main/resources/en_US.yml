@@ -25,6 +25,8 @@ messages:
   you-have-item-in-hand: "&cYou have an item in your hand."
   #Usage message for the /wl page command.
   usage-page: "&cUsage: /wl page <number>"
+  #Usage message for the /wl website commande
+  usage-website: "&cUsage : /wl website <givecode/deleteaccount> <args>"
   #Error message when the page number is not positive.
   page-number-positive: "&cPage number must be positive."
   #Error message for an invalid page number.
@@ -95,6 +97,14 @@ messages:
   no-log-found: "&cNo log found here."
   #Confirmation message for correctly removing the tool.
   tool-correctly-removed: "&cTool correctly removed !"
+  #Usage message of /wl website deleteaccount command.
+  delete_account_usage: "&cUsage : /wl website deleteaccount <name>"
+  #Message sent when player try to delete website account, but this account not exists.
+  account_not_exists: "&cNo account found with given name !"
+  #Message sent when an account are correctly deleted.
+  account_correctly_deleted: "&aAccount correctly deleted in database !"
+  #Message sent when an error occured an account delete.
+  error_when_account_delete: "&cAn error occurred when trying to delete account in the database. Please check console for more informations."
 
 discord:
   #Title of the bot and plugin information command.
