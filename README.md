@@ -82,7 +82,9 @@ These prefixes can be used to refine your search and find specific logs you're l
 | `watchlogs.database`| Allows access to the database command.         |
 | `watchlogs.page`    | Allows access to the page command.             |
 | `watchlogs.tpto`    | Allows access to the tpto command.             |
-| `watchlogs.giveitem`| Allows access to the giveitem command.         |
+| `watchlogs.giveitem`| Allows access to the giveitem command.
+| `watchlogs.export` | Allows to export datas |
+| `watchlogs.import` | Allows to import datas |
 | `watchlogs.gdeath`  | Allows access to the gdeath command.           |
 | `watchlogs.search`  | Allows access to the search command.           |
 | `watchlogs.website.code`| Allows to obtain the website register security code. |
@@ -106,6 +108,24 @@ We provide open and responsive support for WatchLogs. Need help or have suggesti
 ## 📜 License and Usage
 
 WatchLogs is released under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html). You are free to fork this project and modify it according to your needs, but you must retain the original credits and include a reference to the original project.
+
+## ⚽ Goals of download
+
+❌ 100 Downloads
+
+❌ 200 Downloads
+
+❌ 250 Downloads
+
+❌ 500 Downloads
+
+❌ 1000 Downloads
+
+❌ 2000 Downloads
+
+❌ 5000 Downloads
+
+❌ 10000 Downloads
 
 ## 🤖 Discord Bot Setup
 
