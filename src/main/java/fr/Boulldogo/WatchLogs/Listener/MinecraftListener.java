@@ -90,7 +90,7 @@ public class MinecraftListener implements Listener {
         Block block = e.getBlock();
         String blockName = materialUtils.getBlockName(block);
         int data = block.getData();
-        if(isLogEnable("block-place") && isLogResearch(player) && materialUtils.isBlockActivated(blockName)) {
+        if(isLogEnable("block-place") && !isLogResearch(player) && materialUtils.isBlockActivated(blockName)) {
             Location location = block.getLocation();
             databaseManager.insertLog(player.getName(), "block-place", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(), "Block Type: " + blockName + (data != 0 ? ":" +  data : ""));
         }
@@ -140,7 +140,6 @@ public class MinecraftListener implements Listener {
 	@EventHandler
 	public void onInventoryClick(InventoryClickEvent event) {
 	    if(event.isCancelled()) return;
-	    if(event.getClickedInventory().getType() == InventoryType.CREATIVE) return;
 	    if(event.getClickedInventory() == null) return;
 	    if(event.getWhoClicked() instanceof Player) {
 	        Player player = (Player) event.getWhoClicked();
@@ -180,7 +179,7 @@ public class MinecraftListener implements Listener {
 	        int amount = item.getAmount();
 	        String action = (toInventory.equals(player.getInventory())) ? "added" : "removed";
 	        String sign = (action.equals("added")) ? ChatColor.GREEN + "+" : ChatColor.RED + "-";
-	        databaseManager.insertLog(player.getName(), "container-transaction", (location == null ? "Unknow" : location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ()), player.getWorld().getName(), containerName + ", " + id + (data != 0 ? ":" +  data : "") + " (" + sign + ChatColor.GRAY + " x" + ChatColor.YELLOW + amount + ChatColor.GRAY + ")");
+	        databaseManager.insertLog(player.getName(), "container-transaction", (location == null ? "Unknow" : location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ()), player.getWorld().getName(), containerName + ", " + id + (data != 0 ? ":" +  data : "") + " (" + sign + " x" + amount + ")");
 	        
 	        if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
 	        	databaseManager.addItemEntry(databaseManager.getLastLogId(), dataSerializer.serializeItemStack(item), false, -1);

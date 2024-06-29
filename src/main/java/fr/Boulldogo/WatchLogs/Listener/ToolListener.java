@@ -24,6 +24,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import fr.Boulldogo.WatchLogs.Main;
 import fr.Boulldogo.WatchLogs.Database.DatabaseManager;
+import fr.Boulldogo.WatchLogs.Utils.MaterialUtils;
 import fr.Boulldogo.WatchLogs.Utils.PlayerSession;
 
 public class ToolListener implements Listener {
@@ -44,8 +45,10 @@ public class ToolListener implements Listener {
         ItemStack itemInHand = e.getItemInHand();
 
         String id = plugin.getConfig().getString("block-tool.id");
+        
+        MaterialUtils utils = new MaterialUtils(plugin);
 
-        if(String.valueOf(block.getType()).equals(id)) {
+        if(utils.getBlockName(block).equals(id)) {
             if(itemInHand != null && itemInHand.hasItemMeta()) {
                 if(databaseManager.playerExists(player.getName()) && databaseManager.isToolEnabled(player.getName())) {
                     if(player.hasPermission("watchlogs.use-tool")) {
@@ -83,8 +86,10 @@ public class ToolListener implements Listener {
         ItemStack itemInHand = player.getItemInHand();
 
         String id = plugin.getConfig().getString("block-tool.id");
+        
+        MaterialUtils utils = new MaterialUtils(plugin);
 
-        if(String.valueOf(block.getType()).equals(id)) {
+        if(utils.getBlockName(block).equals(id)) {
             if(itemInHand != null && itemInHand.hasItemMeta()) {
                 if(databaseManager.playerExists(player.getName()) && databaseManager.isToolEnabled(player.getName())) {
                     if(player.hasPermission("watchlogs.use-tool")) {
@@ -113,9 +118,8 @@ public class ToolListener implements Listener {
         }
     }
     
-	@EventHandler
+	@EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryClick(InventoryClickEvent e) {
-		if(e.getInventory().getType() == InventoryType.CREATIVE) return;
         String prefix = plugin.getConfig().getBoolean("use-prefix") ? translateString(plugin.getConfig().getString("prefix")) : "";
         if(e.getWhoClicked() instanceof Player) {
             Player player = (Player) e.getWhoClicked();
@@ -124,7 +128,9 @@ public class ToolListener implements Listener {
             ItemStack stack = e.getCurrentItem();
             String id = plugin.getConfig().getString("block-tool.id");
             
-            if(clickedInventory.getType() == InventoryType.PLAYER && stack != null && String.valueOf(stack.getType()).equals(id) && databaseManager.playerExists(player.getName()) && databaseManager.isToolEnabled(player.getName())) {
+            MaterialUtils utils = new MaterialUtils(plugin);
+            
+            if(clickedInventory != null && clickedInventory.getType() == InventoryType.PLAYER && stack != null && utils.getItemName(stack).equals(id) && databaseManager.playerExists(player.getName()) && databaseManager.isToolEnabled(player.getName())) {
                 e.setCancelled(true);
                 player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.cant-inventory-interact-tool-item")));
             }   

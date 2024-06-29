@@ -760,7 +760,7 @@ public class DatabaseManager {
             if(bot.isBotOnline()) {
             	if(isDiscordLogEnable(action)) {
                     if(plugin.getConfig().getBoolean("discord.enable_live_logs") && plugin.getConfig().contains("discord.live_logs_channel_id")) {
-                        bot.sendDirectLogs(id + 1, ActionUtils.getFormattedNameForActions(action), result, pseudo, world, location);
+                        bot.sendDirectLogs(id + 1, ActionUtils.getFormattedNameForActions(action), result, pseudo, world, location, action);
                     }
             	}
             }

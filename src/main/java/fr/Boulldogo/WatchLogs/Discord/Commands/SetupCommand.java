@@ -41,36 +41,40 @@ public class SetupCommand implements SlashCommand {
     public void execute(SlashCommandInteractionEvent event) {
         String userId = event.getInteraction().getMember().getUser().getId();
 
-        if (event.getGuild().getMemberById(userId).hasPermission(Permission.ADMINISTRATOR)) {
+        if(event.getGuild().getMemberById(userId).hasPermission(Permission.ADMINISTRATOR)) {
             String channelId = event.getOption("logs_channel") != null ? event.getOption("logs_channel").getAsChannel().getId() : null;
             Boolean liveLogging = event.getOption("enable_live_logging") != null ? event.getOption("enable_live_logging").getAsBoolean() : null;
             String roleId = event.getOption("allowed_role") != null ? event.getOption("allowed_role").getAsRole().getId() : null;
             String color = event.getOption("log_embed_color") != null ? event.getOption("log_embed_color").getAsString() : null;
 
-            if (channelId != null) {
+            if(channelId != null) {
                 plugin.getConfig().set("discord.live_logs_channel_id", channelId);
                 plugin.getLogger().info("[Discord Module] Setting changed (live_logs_channel_id) : " + channelId);
             }
-            if (liveLogging != null) {
+            
+            if(liveLogging != null) {
                 plugin.getConfig().set("discord.enable_live_logs", liveLogging);
                 plugin.getLogger().info("[Discord Module] Setting changed (enable_live_logs) : " + liveLogging);
             }
-            if (roleId != null) {
+            
+            if(roleId != null) {
                 plugin.getConfig().set("discord.permission_role_id", roleId);
-                plugin.getLogger().info("[Discord Module] Setting changed (permission_role_id) : " + liveLogging);
+                plugin.getLogger().info("[Discord Module] Setting changed (permission_role_id) : " + roleId);
             }
-            if (color != null) {
-            	if(!color.equalsIgnoreCase("RANDOM")) {
-            		if(!color.startsWith("#")) {
+            
+            if(color != null) {
+                if(!color.equalsIgnoreCase("RANDOM")) {
+                    if(!color.startsWith("#")) {
                         event.reply(":x: Format color is wrong ! Please set # before the HEX color.").setEphemeral(true).queue();
                         return;
-            		}
-            	}
+                    }
+                }
                 plugin.getConfig().set("discord.log_embed_color", color);
                 plugin.getLogger().info("[Discord Module] Setting changed (log_embed_color) : " + color);
             }
 
-            if (roleId == null && liveLogging == null && channelId == null && color == null) {
+
+            if(roleId == null && liveLogging == null && channelId == null && color == null) {
                 event.reply(":x: You must give more arguments for executing this command correctly!").setEphemeral(true).queue();
                 return;
             } else {

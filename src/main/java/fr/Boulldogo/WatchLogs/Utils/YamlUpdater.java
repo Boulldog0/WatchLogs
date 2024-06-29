@@ -26,7 +26,7 @@ public class YamlUpdater {
 
     public void updateYamlFiles(String[] fileNames) {
         for(String fileName : fileNames) {
-            try {
+            try{
                 File dataFolderFile = new File(plugin.getDataFolder(), fileName);
 
                 if(!dataFolderFile.exists()) {
@@ -34,9 +34,9 @@ public class YamlUpdater {
                     continue;
                 }
 
-                try (InputStream defaultYamlStream = getClass().getResourceAsStream("/" + fileName)) {
+                try(InputStream defaultYamlStream = getClass().getResourceAsStream("/" + fileName)) {
                     if(defaultYamlStream == null) {
-                        plugin.getLogger().warning("[YAML-Updater] Default file not found in WatchLogs.jar: " + fileName);
+                        plugin.getLogger().warning("[YAML-Updater] Default file not found in AssaultPlugin.jar: " + fileName);
                         continue;
                     }
 
@@ -87,10 +87,12 @@ public class YamlUpdater {
                     List<Object> sourceList = (List<Object>) source.get(key);
                     List<Object> targetList = (List<Object>) target.get(key);
 
-                    for(Object item : sourceList) {
-                        if(!targetList.contains(item)) {
-                            targetList.add(item);
-                            updated = true;
+                    if(!isStringList(sourceList)) {
+                        for(Object item : sourceList) {
+                            if(!targetList.contains(item)) {
+                                targetList.add(item);
+                                updated = true;
+                            }
                         }
                     }
                 }
@@ -105,8 +107,17 @@ public class YamlUpdater {
         return updated;
     }
 
+    private boolean isStringList(List<Object> list) {
+        for(Object item : list) {
+            if(!(item instanceof String)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void saveYaml(File file, Map<String, Object> yamlMap) throws IOException {
-        try (FileOutputStream fileOutputStream = new FileOutputStream(file);
+        try(FileOutputStream fileOutputStream = new FileOutputStream(file);
              OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutputStream)) {
             yamlDumper.dump(yamlMap, outputStreamWriter);
         }

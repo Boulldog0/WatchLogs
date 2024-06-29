@@ -144,6 +144,35 @@ discord:
   enable-logs-coords: false 
   #[EN] URL for player head images in Discord logs. Set %p for set variable of player Name (Player name only, not player UUID) [FR] URL pour les images de tête de joueur dans les logs Discord. Mettez %p pour la variable du pseudo du joueur (Le pseudo uniquement, pas l'UUID)
   url-head-image: "https://minotar.net/helm/%p/128.png"
+  #[EN] Define if you want to enable or disable the split system for logs. [FR] Défini si vous souhaitez activer ou désactiver la division des logs discord.
+  enable-split-log-system: true
+ 
+#[EN] Set here the channel ID for logs split. You can set this with command /setup-split in discord. [FR] Mettez ici l'id du channel pour la division des logs. Vous pouvez utiliser la commande /setup-split directement sur discord.
+splitted-discord-logs:
+  join: "-"
+  leave: "-"
+  teleport: "-"
+  block-place: "-"
+  block-break: "-"
+  container-open: "-"
+  container-transaction: "-"
+  item-drop: "-"
+  item-pickup: "-"
+  item-break: "-"
+  player-death: "-"
+  player-death-loot: "-"
+  commands: "-"
+  send-message: "-"
+  interact-item: "-"
+  interact-block: "-"
+  interact-entity: "-"
+  block-explosion: "-"
+  json-import: "-"
+  json-export: "-"
+  website-login: "-"
+  website-logout: "-"
+  website-logs-search: "-"
+  website-register: "-"
 
 #[EN] Enable or disable specific Discord log events. [FR] Activer ou désactiver des événements de log Discord spécifiques.
 enable-discord-logs:
