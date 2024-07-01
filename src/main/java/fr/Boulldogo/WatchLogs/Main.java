@@ -43,7 +43,7 @@ public class Main extends JavaPlugin {
 	public boolean EnableWorldGuard = true;
     private Map<Player, PlayerSession> playerSessions;
 	boolean useMySQLDatabase = this.getConfig().getBoolean("use-mysql");
-	public static String version = "1.2.0";
+	public static String version = "1.2.2";
 	private boolean isUpToDate = true;
 	public DatabaseManager databaseManager;
     private SetupDiscordBot discordBot;
@@ -203,7 +203,7 @@ public class Main extends JavaPlugin {
             SimpleDateFormat todayFileName = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
 			
 			File folder = new File(this.getDataFolder(), "logs");
-			File todayFile = new File(folder, todayFileName + ".yml");
+			File todayFile = new File(folder, todayFileName.toString() + ".yml");
 			File ancientFolder = new File(folder, "archives");
 			if(!folder.exists()) {
 				folder.mkdirs();
@@ -218,6 +218,7 @@ public class Main extends JavaPlugin {
 					e.printStackTrace();
 				}
 			}
+			runSaveLogFile();
 		}
 		
 		File importFolder = new File(this.getDataFolder(), "import");
@@ -231,7 +232,7 @@ public class Main extends JavaPlugin {
 	    this.jsonDatabase = new JsonDatabase(this, databaseManager);
 		
 		this.getLogger().info("Spigot project : https://www.spigotmc.org/resources/⚙%EF%B8%8F-watchlogs-⚙%EF%B8%8F-ultimate-all-in-one-log-solution-1-7-1-20-6.117128/");
-		this.getLogger().info("Plugin WatchLogs v1.2.0 by Boulldogo loaded correctly !");
+		this.getLogger().info("Plugin WatchLogs v1.2.2 by Boulldogo loaded correctly !");
 		
 		
 		this.getServer().getPluginManager().registerEvents(new MinecraftListener(this, databaseManager, materialUtils, dataSerializer), this);
@@ -278,6 +279,37 @@ public class Main extends JavaPlugin {
 	
 	public SetupDiscordBot getDiscordBot() {
 		return discordBot;
+	}
+	
+	public void runSaveLogFile() {
+		new BukkitRunnable() {
+			
+			@Override
+			public void run() {
+		        if(getConfig().getBoolean("log-in-file")) {
+		            SimpleDateFormat todayFileName = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
+		            File folder = new File(getDataFolder(), "logs");
+		            File todayFile = new File(folder, todayFileName.toString() + ".yml");
+
+		            if(!folder.exists()) {
+		                folder.mkdirs();
+		            }
+
+		            YamlConfiguration config;
+		            if(todayFile.exists()) {
+		                config = YamlConfiguration.loadConfiguration(todayFile);
+		            } else {
+		                config = new YamlConfiguration();
+		            }
+
+		            try {
+		                config.save(todayFile);
+		            } catch (IOException e) {
+		                e.printStackTrace();
+		            }
+		        }
+			}
+		}.runTaskTimer(this, 0, 1200L);
 	}
 	
 	public boolean isVersionLessThanOrEqual(String versionToCompare) {
@@ -366,7 +398,7 @@ public class Main extends JavaPlugin {
         calendar.add(Calendar.DAY_OF_MONTH, -1);
         Date previousDay = calendar.getTime();
         SimpleDateFormat yesFileName = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
-        String yesterdayFileName = yesFileName.format(previousDay);
+        String yesterdayFileName = yesFileName.format(previousDay).toString();
 
 	    File folder = new File(this.getDataFolder(), "logs");
 	    File todayFile = new File(folder, todayFileName.toString());

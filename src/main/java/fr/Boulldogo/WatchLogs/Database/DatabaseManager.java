@@ -1,7 +1,6 @@
 package fr.Boulldogo.WatchLogs.Database;
 
 import java.io.File;
-import java.io.IOException;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -734,7 +733,7 @@ public class DatabaseManager {
         if(plugin.getConfig().getBoolean("log-in-file")) {
             SimpleDateFormat todayFileName = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
             File folder = new File(plugin.getDataFolder(), "logs");
-            File todayFile = new File(folder, todayFileName + ".yml");
+            File todayFile = new File(folder, todayFileName.toString() + ".yml");
 
             if(!folder.exists()) {
                 folder.mkdirs();
@@ -748,11 +747,6 @@ public class DatabaseManager {
             }
 
             config.set("[WatchLogs][" + todayFileName + "][" + (id + 1) + "][" + System.currentTimeMillis() + "]", "Action : " + action + "; Player : " + pseudo + "; Information : " + result + "; Location : " + location + "; World : " + world + " .");
-            try {
-                config.save(todayFile);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
 
         if(plugin.getConfig().getBoolean("discord.discord-module-enabled")) {

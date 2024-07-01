@@ -27,7 +27,7 @@ sqlite:
  #[EN] Available languages : US (English US) or FR (French). [FR] Languages disponibles : US (Anglais américain) ou FR (Français)
 lang_file: US
 #[EN] Enable or disable logging to file. [FR] Activer ou désactiver la journalisation dans un fichier.
-log-in-file: true 
+log-in-file: false
 #[EN] Enable automatic deletion of old log archives. [FR] Activer la suppression automatique des anciens fichiers de log.
 delete-old-archives: true
  #[EN] Number of days before old log files are deleted. [FR] Nombre de jours avant que les anciens fichiers de log soient supprimés.
@@ -78,15 +78,15 @@ enable-logs:
   teleport: true 
   block-place: true 
   block-break: true 
-  container-open: true 
+  container-open: false
   container-transaction: true 
   item-drop: true 
   item-pickup: true 
-  item-break: true
+  item-break: false
   player-death: true 
   player-death-loot: true 
   commands: true 
-  send-message: true 
+  send-message: false
   interact-item: true 
   interact-block: true
   interact-entity: true
