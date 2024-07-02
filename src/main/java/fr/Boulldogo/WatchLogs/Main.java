@@ -43,12 +43,11 @@ public class Main extends JavaPlugin {
 	public boolean EnableWorldGuard = true;
     private Map<Player, PlayerSession> playerSessions;
 	boolean useMySQLDatabase = this.getConfig().getBoolean("use-mysql");
-	public static String version = "1.2.2";
+	public static String version = "1.2.3";
 	private boolean isUpToDate = true;
 	public DatabaseManager databaseManager;
     private SetupDiscordBot discordBot;
     @SuppressWarnings("unused")
-	private Metrics metrics;
     private YamlConfiguration lang;
     @SuppressWarnings("unused")
 	private String bukkitVersion;
@@ -88,7 +87,7 @@ public class Main extends JavaPlugin {
 		
 	    playerSessions = new HashMap<>();
 	    
-	    metrics = new Metrics(this, 22048);
+	    new Metrics(this, 22048);
 	    
 	    this.webUtils = new WebUtils();
 	    
@@ -232,7 +231,7 @@ public class Main extends JavaPlugin {
 	    this.jsonDatabase = new JsonDatabase(this, databaseManager);
 		
 		this.getLogger().info("Spigot project : https://www.spigotmc.org/resources/⚙%EF%B8%8F-watchlogs-⚙%EF%B8%8F-ultimate-all-in-one-log-solution-1-7-1-20-6.117128/");
-		this.getLogger().info("Plugin WatchLogs v1.2.2 by Boulldogo loaded correctly !");
+		this.getLogger().info("Plugin WatchLogs v1.2.3 by Boulldogo loaded correctly !");
 		
 		
 		this.getServer().getPluginManager().registerEvents(new MinecraftListener(this, databaseManager, materialUtils, dataSerializer), this);

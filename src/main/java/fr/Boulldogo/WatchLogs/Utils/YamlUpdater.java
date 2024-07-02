@@ -1,6 +1,7 @@
 package fr.Boulldogo.WatchLogs.Utils;
 
 import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
@@ -17,7 +18,8 @@ public class YamlUpdater {
     public YamlUpdater(Main plugin) {
         this.plugin = plugin;
 
-        this.yamlLoader = new Yaml(new Constructor());
+        LoaderOptions loaderOptions = new LoaderOptions();
+        this.yamlLoader = new Yaml(new Constructor(loaderOptions));
 
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
@@ -26,7 +28,7 @@ public class YamlUpdater {
 
     public void updateYamlFiles(String[] fileNames) {
         for(String fileName : fileNames) {
-            try{
+            try {
                 File dataFolderFile = new File(plugin.getDataFolder(), fileName);
 
                 if(!dataFolderFile.exists()) {
@@ -36,7 +38,7 @@ public class YamlUpdater {
 
                 try(InputStream defaultYamlStream = getClass().getResourceAsStream("/" + fileName)) {
                     if(defaultYamlStream == null) {
-                        plugin.getLogger().warning("[YAML-Updater] Default file not found in AssaultPlugin.jar: " + fileName);
+                        plugin.getLogger().warning("[YAML-Updater] Default file not found in WatchLogs.jar: " + fileName);
                         continue;
                     }
 
@@ -52,7 +54,7 @@ public class YamlUpdater {
                         plugin.getLogger().info("[YAML-Updater] All keys are present in: " + fileName);
                     }
                 }
-            } catch (IOException e) {
+            } catch(IOException e) {
                 plugin.getLogger().severe("[YAML-Updater] Error updating file: " + fileName);
                 e.printStackTrace();
             }
@@ -73,8 +75,8 @@ public class YamlUpdater {
                     target.put(key, new HashMap<String, Object>());
                     updated = true;
                 }
-                Map<String, Object> subSource = (Map<String, Object>) source.get(key);
-                Map<String, Object> subTarget = (Map<String, Object>) target.get(key);
+                Map<String, Object> subSource =(Map<String, Object>) source.get(key);
+                Map<String, Object> subTarget =(Map<String, Object>) target.get(key);
                 boolean subUpdated = addMissingEntries(subSource, subTarget);
                 if(subUpdated) {
                     updated = true;
@@ -84,8 +86,8 @@ public class YamlUpdater {
                     target.put(key, new ArrayList<Object>((List<Object>) source.get(key)));
                     updated = true;
                 } else {
-                    List<Object> sourceList = (List<Object>) source.get(key);
-                    List<Object> targetList = (List<Object>) target.get(key);
+                    List<Object> sourceList =(List<Object>) source.get(key);
+                    List<Object> targetList =(List<Object>) target.get(key);
 
                     if(!isStringList(sourceList)) {
                         for(Object item : sourceList) {
