@@ -12,12 +12,16 @@ public class PermissionChecker {
     private final boolean hasLuckperms;
 
     public PermissionChecker(boolean hasLuckPerms) {
-        this.luckPerms = LuckPermsProvider.get();
         this.hasLuckperms = hasLuckPerms;
+        if(hasLuckPerms) {
+            this.luckPerms = LuckPermsProvider.get();
+        } else {
+        	this.luckPerms = null;
+        }
     }
 
     public boolean hasPermission(String playerName, String permission) {
-    	if(hasLuckperms) {
+    	if(hasLuckperms && luckPerms != null) {
             @SuppressWarnings("deprecation")
 			User user = luckPerms.getUserManager().loadUser(Bukkit.getOfflinePlayer(playerName).getUniqueId()).join();
             if (user != null) {

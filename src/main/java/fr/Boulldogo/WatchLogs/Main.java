@@ -43,7 +43,7 @@ public class Main extends JavaPlugin {
 	public boolean EnableWorldGuard = true;
     private Map<Player, PlayerSession> playerSessions;
 	boolean useMySQLDatabase = this.getConfig().getBoolean("use-mysql");
-	public static String version = "1.2.3";
+	public static String version = "1.2.4";
 	private boolean isUpToDate = true;
 	public DatabaseManager databaseManager;
     private SetupDiscordBot discordBot;
@@ -231,7 +231,7 @@ public class Main extends JavaPlugin {
 	    this.jsonDatabase = new JsonDatabase(this, databaseManager);
 		
 		this.getLogger().info("Spigot project : https://www.spigotmc.org/resources/⚙%EF%B8%8F-watchlogs-⚙%EF%B8%8F-ultimate-all-in-one-log-solution-1-7-1-20-6.117128/");
-		this.getLogger().info("Plugin WatchLogs v1.2.3 by Boulldogo loaded correctly !");
+		this.getLogger().info("Plugin WatchLogs v1.2.4 by Boulldogo loaded correctly !");
 		
 		
 		this.getServer().getPluginManager().registerEvents(new MinecraftListener(this, databaseManager, materialUtils, dataSerializer), this);
@@ -252,7 +252,7 @@ public class Main extends JavaPlugin {
 				+ " \\  /\\  / (_| | || (__| | | / /__| (_) | (_| \\__ \\\r\n"
 				+ "  \\/  \\/ \\__,_|\\__\\___|_| |_\\____/\\___/ \\__, |___/\r\n"
 				+ "                                        |___/     ");
-		this.getLogger().info("Plugin WatchLogs v1.2.0 by Boulldogo unloaded correctly !");
+		this.getLogger().info("Plugin WatchLogs v1.2.4 by Boulldogo unloaded correctly !");
 		
         if(discordBot != null && discordBot.getJDA() != null) {
             discordBot.getJDA().shutdown();
