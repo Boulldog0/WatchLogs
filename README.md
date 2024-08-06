@@ -46,7 +46,7 @@ Welcome to WatchLogs, the ultimate Minecraft logging plugin! Packed with an arra
 | Command              | Description                                       |
 |----------------------|---------------------------------------------------|
 | `/wl help`           | Displays the help message.                        |
-| `/wl tool`           | Activate or deactivate the logging tool.         |
+| `/wl tool <setlimit> <limit>`           | Activate or deactivate the logging tool/ Modify the limit of the tool research.         |
 | `/wl database`       | Displays information about the database.         |
 | `/wl page <number>`  | Displays logs for the specified page.            |
 | `/wl tpto <id>`      | Teleport to the location of the specified action.|
@@ -55,7 +55,7 @@ Welcome to WatchLogs, the ultimate Minecraft logging plugin! Packed with an arra
 | `/wl import <name> <originalId>` | Import .json files in the logs system.  |
 | `/wl export <lines> <parameters>` | Export logs datas with given lines number (or all for export all outputs lines) in .json file with given settings. |
 | `/wl search <parameters>` | Search logs with the specified parameters.   |
-| `/wl website <givecode/deleteaccount>` | Give security code or delete account from the website. |
+| `/wl website <givecode/deleteaccount/port>` | Give security code or delete account or give port from the website. |
 
 **Aliases of WatchLogs commands :** `/watchlogs`, `/watchl`, `/wlogs`, `/wl`
 
@@ -69,6 +69,7 @@ Welcome to WatchLogs, the ultimate Minecraft logging plugin! Packed with an arra
 | `t:`   | Search within a specific time period. | `/wl search t:30m`       |
 | `f:`   | Search within a specific filter in result category. | `/wl f:NETHERITE_SWORD` |
 | `r:`   | Search within a specific radius around you. | `/wl search r:3`       |
+| `l:`| Search within a custom limit of results. | `/wl search l:90` |
 | `all` (export command only) | Export alldatas from the database. | `/wl export all all` |+
 
 These prefixes can be used to refine your search and find specific logs you're looking for. Multiple filters can be used in the same search. Example : `/wl search p:Steve a:block-break r:3` or `/wl search a:block-break w:event t:30m f:DIRT`. For export command, its the same system, with examples such as `/wl export all a:block-break` or `/wl export 100 p:Steve r:3 f:NETHERITE_SWORD`

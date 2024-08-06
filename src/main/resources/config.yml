@@ -70,6 +70,7 @@ block-tool:
   id: DIAMOND_BLOCK
   #[EN] Custom name for the block tool. [FR] Nom personnalisé pour l'outil de bloc.
   name: "&bWatchTool" 
+  research-limit-default: 100
 
 #[EN] Enable or disable specific log events. [FR] Activer ou désactiver des événements de log spécifiques.
 enable-logs: 
@@ -118,10 +119,12 @@ website:
    use-login-whitelist: false
    #[EN] Define if you want to log IPs request on the website. [FR] Défini si vous souhaitez logger les IP des requêtes sur le panel web.
    log-request-ips: true
-   #[EN] Define if you want to hide coordinates on the logs. [FR] Défini si vous souhaitez cacher les coordonées dans les logs.
-   
+   #[EN] Define if you want to hide coordinates on the logs. [FR] Défini si vous souhaitez cacher les coordonées dans les logs. 
    hide-coordinates-in-logs: false
-  
+   #[EN] Define the time when the logs can be showed in the web panel. Take a little time, because the longer the time, the longer the search work in the database will take and will risk crashing your server.
+   #[FR] Défini le temps durant lequel les logs pourront être montrés sur le panel web. Mettez un petit temps, car plus le temps sera grand, plus le travaille de recherche dans la base de donnée sera long et risquera de faire crash votre serveur.  
+   website-log-time-limit-showed: "7d"
+   
 #[EN] If you use the register whitelist, set here the names of players allows to register. [FR] Si vous utiliser la whitelist d'enregistrement, mettez ici le nom des joueurs autorisés à s'enregistrer.
 website-register-whitelist:
 - STEVE

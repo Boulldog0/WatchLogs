@@ -55,6 +55,10 @@ public class ToolListener implements Listener {
                         e.setCancelled(true);
                         String blockLoc = block.getX() + "/" + block.getY() + "/" + block.getZ();
                         PlayerSession session = plugin.getPlayerSession(player);
+                        int toolLimit = plugin.getConfig().getInt("block-tool.research-limit-default");
+                        if(!session.hasToolLimit()) {
+                        	session.setToolLimit(toolLimit);
+                        }
                         session.setBlockLocation(blockLoc);
                         session.setCurrentPage(1);
                         session.setToolLog(true);
@@ -235,8 +239,9 @@ public class ToolListener implements Listener {
         int y = Integer.parseInt(pos[1]);
         int z = Integer.parseInt(pos[2]);
         String worldName = player.getWorld().getName();
+        int limit = session.getToolLimit();
 
-        List<String> logs = databaseManager.getLogs(x, y, z, worldName);
+        List<String> logs = databaseManager.getLogs(x, y, z, worldName, limit);
         if (logs.isEmpty()) {
             player.sendMessage(prefix + "No log found here.");
         } else {

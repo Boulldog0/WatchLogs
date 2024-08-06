@@ -1,6 +1,7 @@
 package fr.Boulldogo.WatchLogs.Database;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -45,10 +46,10 @@ public class DatabaseManager {
 
     public void connect() {
         try {
-            if (connection != null && !connection.isClosed()) {
+            if(connection != null && !connection.isClosed()) {
                 return;
             }
-            if (useMysql) {
+            if(useMysql) {
                 connection = DriverManager.getConnection(url, username, password);
                 logger.info("Connected to the MySQL database.");
             } else {
@@ -57,7 +58,7 @@ public class DatabaseManager {
             }
             createTableIfNotExists();
             maintainConnection();
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
             plugin.getLogger().severe("Error when plugin trying to connect with database! WatchLogs are disabled!");
             plugin.getServer().getPluginManager().disablePlugin(plugin);
@@ -66,11 +67,11 @@ public class DatabaseManager {
 
     private void reconnect() {
         try {
-            if (connection != null && !connection.isClosed()) {
+            if(connection != null && !connection.isClosed()) {
                 connection.close();
             }
             connect();
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
             plugin.getLogger().severe("Error when reconnecting to the database! WatchLogs are disabled!");
             plugin.getServer().getPluginManager().disablePlugin(plugin);
@@ -82,14 +83,14 @@ public class DatabaseManager {
             @Override
             public void run() {
                 try {
-                    if (connection == null || connection.isClosed()) {
+                    if(connection == null || connection.isClosed()) {
                         reconnect();
                     } else {
                         Statement stmt = connection.createStatement();
                         stmt.execute("SELECT 1 FROM watchlogs_logs");
                         stmt.close();
                     }
-                } catch (SQLException e) {
+                } catch(SQLException e) {
                     e.printStackTrace();
                     plugin.getLogger().severe("Error maintaining database connection! WatchLogs are disabled!");
                     plugin.getServer().getPluginManager().disablePlugin(plugin);
@@ -100,7 +101,7 @@ public class DatabaseManager {
 
     private void createTableIfNotExists() {
         String sql = useMysql
-            ? "CREATE TABLE IF NOT EXISTS watchlogs_logs ("
+            ? "CREATE TABLE IF NOT EXISTS watchlogs_logs("
             + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
             + "pseudo TEXT, "
             + "action TEXT, "
@@ -108,7 +109,7 @@ public class DatabaseManager {
             + "world TEXT, "
             + "result TEXT, "
             + "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);"
-            : "CREATE TABLE IF NOT EXISTS watchlogs_logs ("
+            : "CREATE TABLE IF NOT EXISTS watchlogs_logs("
             + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
             + "pseudo TEXT, "
             + "action TEXT, "
@@ -117,24 +118,24 @@ public class DatabaseManager {
             + "result TEXT, "
             + "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);";
         
-        String sql2 = "CREATE TABLE IF NOT EXISTS watchlogs_players ("
+        String sql2 = "CREATE TABLE IF NOT EXISTS watchlogs_players("
                 + "pseudo TEXT(255),"
                 + "tool_enabled BOOLEAN DEFAULT FALSE);";
         
         String sql3 = "undefinded";
         if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
-            sql3 = "CREATE TABLE IF NOT EXISTS watchlogs_items ("
+            sql3 = "CREATE TABLE IF NOT EXISTS watchlogs_items("
                     + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
                     + "item_serialize TEXT,"
                     + "death_id INTEGER,"
                     + "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);";
         }
         
-        String sql4 = "CREATE TABLE IF NOT EXISTS watchlogs_accounts ("
+        String sql4 = "CREATE TABLE IF NOT EXISTS watchlogs_accounts("
                  + "username TEXT(255) UNIQUE, "  
                  + "password TEXT(255));";
 
-        try (Statement stmt = connection.createStatement()) {
+        try(Statement stmt = connection.createStatement()) {
             stmt.executeUpdate(sql);
             stmt.executeUpdate(sql2);
             stmt.executeUpdate(sql4);
@@ -145,7 +146,7 @@ public class DatabaseManager {
                 stmt.executeUpdate(sql3);
                 logger.info("Table 'watchlogs_items' checked/created.");
             }
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
         }
     }
@@ -156,7 +157,7 @@ public class DatabaseManager {
     
     public boolean authenticateUser(String username, String password) throws SQLException {
         String query = "SELECT * FROM watchlogs_accounts WHERE username = ? AND password = ?";
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+        try(PreparedStatement stmt = connection.prepareStatement(query)) {
         	String hashedPass = getHashedPassword(username);
             stmt.setString(1, username);
             stmt.setString(2, hashedPass);
@@ -167,10 +168,10 @@ public class DatabaseManager {
     
     public String getHashedPassword(String username) throws SQLException {
         String query = "SELECT password FROM watchlogs_accounts WHERE username = ?";
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+        try(PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setString(1, username);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
+            try(ResultSet rs = stmt.executeQuery()) {
+                if(rs.next()) {
                     return rs.getString("password");
                 } else {
                     return null;
@@ -180,13 +181,13 @@ public class DatabaseManager {
     }
 
     public void createUser(String username, String password) throws SQLException {   
-        String query = "INSERT INTO watchlogs_accounts (username, password) VALUES (?, ?)";
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+        String query = "INSERT INTO watchlogs_accounts(username, password) VALUES(?, ?)";
+        try(PreparedStatement stmt = connection.prepareStatement(query)) {
             String hashedPassword = BCryptUtils.hashPassword(password);
             stmt.setString(1, username);
             stmt.setString(2, hashedPassword);
             stmt.execute();
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
             throw new SQLException("Failed to create user: " + e.getMessage());
         }
@@ -195,11 +196,11 @@ public class DatabaseManager {
     public boolean deleteUser(String username) {
         String query = "DELETE FROM watchlogs_accounts WHERE username = ?";
 
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+        try(PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setString(1, username);
             stmt.execute();
             return true;
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
             return false;
         }
@@ -210,24 +211,24 @@ public class DatabaseManager {
         
         String hashedPassword = BCryptUtils.hashPassword(password);
         
-        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+        try(PreparedStatement pstmt = connection.prepareStatement(query)) {
             pstmt.setString(1, hashedPassword);
             pstmt.setString(2, username);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
         }
     }
     
     public boolean isUserRegistered(String username) {
         String query = "SELECT 1 FROM watchlogs_accounts WHERE username = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+        try(PreparedStatement pstmt = connection.prepareStatement(query)) {
             
             pstmt.setString(1, username);
-            try (ResultSet rs = pstmt.executeQuery()) {
+            try(ResultSet rs = pstmt.executeQuery()) {
                 return rs.next(); 
             }
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
             return false;
         }
@@ -235,16 +236,16 @@ public class DatabaseManager {
     
     public int getNumberOfAccounts() {
         String query = "SELECT COUNT(*) FROM watchlogs_accounts";
-        try (Connection conn = getConnection();
+        try(Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query);
              ResultSet rs = pstmt.executeQuery()) {
             
-            if (rs.next()) {
+            if(rs.next()) {
                 return rs.getInt(1); 
             } else {
                 return 0;
             }
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
             return 0;
         }
@@ -252,15 +253,15 @@ public class DatabaseManager {
     
     public ItemStack getItemById(int id) {
         String sql = "SELECT item_serialize FROM watchlogs_items WHERE id = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, id);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
+            try(ResultSet rs = pstmt.executeQuery()) {
+                if(rs.next()) {
                     String itemSerialize = rs.getString("item_serialize");
                     return dataSerializer.deserializeItemStack(itemSerialize);
                 }
             }
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
         }
         return null;
@@ -268,12 +269,12 @@ public class DatabaseManager {
 
     public boolean itemIdExists(int id) {
         String sql = "SELECT 1 FROM watchlogs_items WHERE id = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, id);
-            try (ResultSet rs = pstmt.executeQuery()) {
+            try(ResultSet rs = pstmt.executeQuery()) {
                 return rs.next();
             }
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
         }
         return false;
@@ -282,45 +283,44 @@ public class DatabaseManager {
     public List<ItemStack> getItemsByDeathId(int deathId) {
         List<ItemStack> items = new ArrayList<>();
         String sql = "SELECT item_serialize FROM watchlogs_items WHERE death_id = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, deathId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
+            try(ResultSet rs = pstmt.executeQuery()) {
+                while(rs.next()) {
                     String itemSerialize = rs.getString("item_serialize");
                     ItemStack item = dataSerializer.deserializeItemStack(itemSerialize);
-                    if (item != null) {
+                    if(item != null) {
                         items.add(item);
                     }
                 }
             }
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
         }
         return items;
     }
     
     @Nullable
-    public void addItemEntry(int id, String itemSerialize, boolean isDeath, int deathId) {
-        String sql = "INSERT INTO watchlogs_items (id, item_serialize, death_id, timestamp) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setInt(1, id);
-            pstmt.setString(2, itemSerialize);
-            pstmt.setInt(3, (isDeath ? deathId : -1)); 
-            pstmt.setTimestamp(4, new Timestamp(System.currentTimeMillis())); 
+    public void addItemEntry(String itemSerialize, boolean isDeath, int deathId) {
+        String sql = "INSERT INTO watchlogs_items(item_serialize, death_id, timestamp) VALUES(?, ?, ?)";
+        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, itemSerialize);
+            pstmt.setInt(2,(isDeath ? deathId : -1)); 
+            pstmt.setTimestamp(3, new Timestamp(System.currentTimeMillis())); 
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
         }
     }
 
     public int getLastDeathId() {
         String sql = "SELECT MAX(death_id) AS max_id FROM watchlogs_items";
-        try (Statement stmt = connection.createStatement();
+        try(Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-            if (rs.next()) {
+            if(rs.next()) {
                 return rs.getInt("max_id");
             }
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
         }
         return 0;
@@ -329,12 +329,12 @@ public class DatabaseManager {
 
     public int getDatabaseSize() {
         String sql = "SELECT COUNT(*) AS total FROM watchlogs_logs";
-        try (Statement stmt = connection.createStatement();
+        try(Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if(rs.next()) {
                 return rs.getInt("total");
             }
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
         }
         return 0;
@@ -342,11 +342,11 @@ public class DatabaseManager {
     
     public boolean playerExists(String playerName) {
         String sql = "SELECT 1 FROM watchlogs_players WHERE pseudo = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, playerName);
             ResultSet rs = pstmt.executeQuery();
             return rs.next();
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
         }
         return false;
@@ -358,24 +358,24 @@ public class DatabaseManager {
             return;
         }
         
-        String sql = "INSERT INTO watchlogs_players (pseudo) VALUES (?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        String sql = "INSERT INTO watchlogs_players(pseudo) VALUES(?)";
+        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, playerName);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
         }
     }
 
     public boolean isToolEnabled(String playerName) {
         String sql = "SELECT tool_enabled FROM watchlogs_players WHERE pseudo = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, playerName);
             ResultSet rs = pstmt.executeQuery();
             if(rs.next()) {
                 return rs.getBoolean("tool_enabled");
             }
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
         }
         return false;
@@ -421,7 +421,7 @@ public class DatabaseManager {
     
     public List<String> getLogs(
     	    String world, String player, boolean useRayon, int centerX, int centerY, int centerZ, int radius,
-    	    String action, String resultFilter, String timeFilter, boolean useTimestamp
+    	    String action, String resultFilter, String timeFilter, boolean useTimestamp, int limit
     	) {
     	    String prefix = plugin.getConfig().getBoolean("use-prefix") ? translateString(plugin.getConfig().getString("prefix")) : "";
     	    List<String> logs = new ArrayList<>();
@@ -460,9 +460,9 @@ public class DatabaseManager {
 
     	        List<String> locationConditions = new ArrayList<>();
 
-    	        for (int x = minX; x <= maxX; x++) {
-    	            for (int y = minY; y <= maxY; y++) {
-    	                for (int z = minZ; z <= maxZ; z++) {
+    	        for(int x = minX; x <= maxX; x++) {
+    	            for(int y = minY; y <= maxY; y++) {
+    	                for(int z = minZ; z <= maxZ; z++) {
     	                    String location = x + "/" + y + "/" + z;
     	                    locationConditions.add("location = ?");
     	                    parameters.add(location);
@@ -471,23 +471,23 @@ public class DatabaseManager {
     	        }
 
     	        if(!locationConditions.isEmpty()) {
-    	            sqlBuilder.append(" AND (");
+    	            sqlBuilder.append(" AND(");
     	            sqlBuilder.append(String.join(" OR ", locationConditions));
     	            sqlBuilder.append(")");
     	        }
     	    }
 
-    	    sqlBuilder.append(" ORDER BY id DESC");
+    	    sqlBuilder.append(" ORDER BY id DESC LIMIT " + limit);
 
     	    String sql = sqlBuilder.toString();
 
-    	    try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-    	        for (int i = 0; i < parameters.size(); i++) {
+    	    try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+    	        for(int i = 0; i < parameters.size(); i++) {
     	            pstmt.setObject(i + 1, parameters.get(i));
     	        }
 
-    	        try (ResultSet rs = pstmt.executeQuery()) {
-    	            while (rs.next()) {
+    	        try(ResultSet rs = pstmt.executeQuery()) {
+    	            while(rs.next()) {
     	                int logId = rs.getInt("id");
     	                String pseudo = rs.getString("pseudo");
     	                String action2 = rs.getString("action");
@@ -496,11 +496,11 @@ public class DatabaseManager {
     	                String result = rs.getString("result");
     	                String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
     	                logs.add(prefix + translateString("&cID &7" + logId + "&c | " + pseudo + " : &7" + action2 + " at " + timestamp + "\n"
-    	                        + prefix + "&cWorld Information: &7" + worldName + " (" + location + ") \n"
+    	                        + prefix + "&cWorld Information: &7" + worldName + "(" + location + ") \n"
     	                        + prefix + "&cOther Information : &7" + result + "\n&7]---------------------------["));
     	            }
     	        }
-    	    } catch (SQLException e) {
+    	    } catch(SQLException e) {
     	        e.printStackTrace();
     	    }
 
@@ -516,28 +516,28 @@ public class DatabaseManager {
 
     	    List<Object> parameters = new ArrayList<>();
 
-    	    if (!world.equals("undefined")) {
+    	    if(!world.equals("undefined")) {
     	        sqlBuilder.append(" AND world = ?");
     	        parameters.add(world);
     	    }
-    	    if (!player.equals("undefined")) {
+    	    if(!player.equals("undefined")) {
     	        sqlBuilder.append(" AND pseudo = ?");
     	        parameters.add(player);
     	    }
-    	    if (!action.equals("undefined")) {
+    	    if(!action.equals("undefined")) {
     	        sqlBuilder.append(" AND action = ?");
     	        parameters.add(action);
     	    }
-    	    if (!resultFilter.equals("undefined")) {
+    	    if(!resultFilter.equals("undefined")) {
     	        sqlBuilder.append(" AND result LIKE ?");
     	        parameters.add("%" + resultFilter + "%");
     	    }
-    	    if (useTimestamp) {
+    	    if(useTimestamp) {
     	        sqlBuilder.append(" AND timestamp >= ?");
     	        parameters.add(calculateTimeThreshold(timeFilter));
     	    }
 
-    	    if (useRayon) {
+    	    if(useRayon) {
     	        int minX = centerX - radius;
     	        int minY = centerY - radius;
     	        int minZ = centerZ - radius;
@@ -547,9 +547,9 @@ public class DatabaseManager {
 
     	        List<String> locationConditions = new ArrayList<>();
 
-    	        for (int x = minX; x <= maxX; x++) {
-    	            for (int y = minY; y <= maxY; y++) {
-    	                for (int z = minZ; z <= maxZ; z++) {
+    	        for(int x = minX; x <= maxX; x++) {
+    	            for(int y = minY; y <= maxY; y++) {
+    	                for(int z = minZ; z <= maxZ; z++) {
     	                    String location = x + "/" + y + "/" + z;
     	                    locationConditions.add("location = ?");
     	                    parameters.add(location);
@@ -557,8 +557,8 @@ public class DatabaseManager {
     	            }
     	        }
 
-    	        if (!locationConditions.isEmpty()) {
-    	            sqlBuilder.append(" AND (");
+    	        if(!locationConditions.isEmpty()) {
+    	            sqlBuilder.append(" AND(");
     	            sqlBuilder.append(String.join(" OR ", locationConditions));
     	            sqlBuilder.append(")");
     	        }
@@ -568,13 +568,13 @@ public class DatabaseManager {
 
     	    String sql = sqlBuilder.toString();
 
-    	    try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-    	        for (int i = 0; i < parameters.size(); i++) {
+    	    try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+    	        for(int i = 0; i < parameters.size(); i++) {
     	            pstmt.setObject(i + 1, parameters.get(i));
     	        }
 
-    	        try (ResultSet rs = pstmt.executeQuery()) {
-    	            while (rs.next()) {
+    	        try(ResultSet rs = pstmt.executeQuery()) {
+    	            while(rs.next()) {
     	                int logId = rs.getInt("id");
     	                String pseudo = rs.getString("pseudo");
     	                String action2 = rs.getString("action");
@@ -595,7 +595,7 @@ public class DatabaseManager {
     	                logs.add(logJson.toString());
     	            }
     	        }
-    	    } catch (SQLException e) {
+    	    } catch(SQLException e) {
     	        e.printStackTrace();
     	    }
 
@@ -635,19 +635,26 @@ public class DatabaseManager {
         if(useTimestamp) {
             sqlBuilder.append(" AND timestamp >= ?");
             parameters.add(calculateTimeThreshold(timeFilter));
+        } else {
+            String configTimeLimit = plugin.getConfig().getString("log-time-limit", "7d");
+            Timestamp timeThreshold = calculateTimeThreshold(configTimeLimit);
+            if(timeThreshold != null) {
+                sqlBuilder.append(" AND timestamp >= ?");
+                parameters.add(timeThreshold);
+            }
         }
 
         sqlBuilder.append(" ORDER BY id DESC");
 
         String sql = sqlBuilder.toString();
 
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            for (int i = 0; i < parameters.size(); i++) {
+        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            for(int i = 0; i < parameters.size(); i++) {
                 pstmt.setObject(i + 1, parameters.get(i));
             }
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
+            try(ResultSet rs = pstmt.executeQuery()) {
+                while(rs.next()) {
                     int logId = rs.getInt("id");
                     String pseudo = rs.getString("pseudo");
                     String action2 = rs.getString("action");
@@ -668,7 +675,7 @@ public class DatabaseManager {
                     logs.add(logJson.toString());
                 }
             }
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
         }
 
@@ -681,7 +688,7 @@ public class DatabaseManager {
             int amount = Integer.parseInt(timeFilter.substring(0, timeFilter.length() - 1));
             char unit = timeFilter.charAt(timeFilter.length() - 1);
 
-            switch (unit) {
+            switch(unit) {
                 case 's':
                     cal.add(Calendar.SECOND, -amount);
                     break;
@@ -709,70 +716,109 @@ public class DatabaseManager {
 
             java.util.Date threshold = cal.getTime();
             return new Timestamp(threshold.getTime());
-        } catch (StringIndexOutOfBoundsException | IllegalArgumentException e) {
+        } catch(StringIndexOutOfBoundsException | IllegalArgumentException e) {
             e.printStackTrace();
             return null;
         }
     }
 
     public void insertLog(String pseudo, String action, String location, String world, String result) {
-        String sql = "INSERT INTO watchlogs_logs (id, pseudo, action, location, world, result, timestamp) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
-        int id = getLastLogId();
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setInt(1, id + 1);
-            pstmt.setString(2, pseudo);
-            pstmt.setString(3, action);
-            pstmt.setString(4, location);
-            pstmt.setString(5, world);
-            pstmt.setString(6, result);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                String sql = "INSERT INTO watchlogs_logs(pseudo, action, location, world, result, timestamp) VALUES(?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
+                try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                    pstmt.setString(1, pseudo);
+                    pstmt.setString(2, action);
+                    pstmt.setString(3, location);
+                    pstmt.setString(4, world);
+                    pstmt.setString(5, result);
+                    pstmt.executeUpdate();
+                } catch(SQLException e) {
+                    e.printStackTrace();
+                }
+
+                if(plugin.getConfig().getBoolean("log-in-file")) {
+                    logToFile(pseudo, action, location, world, result);
+                }
+
+                if(plugin.getConfig().getBoolean("discord.discord-module-enabled")) {
+                    logToDiscord(pseudo, action, location, world, result);
+                }
+            }
+        }.runTaskAsynchronously(plugin);
+    }
+    
+    private void logToFile(String pseudo, String action, String location, String world, String result) {
+        SimpleDateFormat todayFileName = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
+        File folder = new File(plugin.getDataFolder(), "logs");
+        File todayFile = new File(folder, todayFileName.format(new java.util.Date()) + ".yml");
+        int logs = 0;
+
+        if(!folder.exists()) {
+            folder.mkdirs();
         }
 
-        if(plugin.getConfig().getBoolean("log-in-file")) {
-            SimpleDateFormat todayFileName = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
-            File folder = new File(plugin.getDataFolder(), "logs");
-            File todayFile = new File(folder, todayFileName.toString() + ".yml");
-
-            if(!folder.exists()) {
-                folder.mkdirs();
-            }
-
-            YamlConfiguration config;
-            if(todayFile.exists()) {
-                config = YamlConfiguration.loadConfiguration(todayFile);
-            } else {
-                config = new YamlConfiguration();
-            }
-
-            config.set("[WatchLogs][" + todayFileName + "][" + (id + 1) + "][" + System.currentTimeMillis() + "]", "Action : " + action + "; Player : " + pseudo + "; Information : " + result + "; Location : " + location + "; World : " + world + " .");
+        YamlConfiguration config;
+        if(todayFile.exists()) {
+            config = YamlConfiguration.loadConfiguration(todayFile);
+        } else {
+            config = new YamlConfiguration();
         }
 
-        if(plugin.getConfig().getBoolean("discord.discord-module-enabled")) {
-        	SetupDiscordBot bot = plugin.getDiscordBot();
-            if(bot.isBotOnline()) {
-            	if(isDiscordLogEnable(action)) {
-                    if(plugin.getConfig().getBoolean("discord.enable_live_logs") && plugin.getConfig().contains("discord.live_logs_channel_id")) {
-                        bot.sendDirectLogs(id + 1, ActionUtils.getFormattedNameForActions(action), result, pseudo, world, location, action);
-                    }
-            	}
+        config.set("[WatchLogs][" + todayFileName.format(new java.util.Date()) + "][" +(getLastLogId() + 1) + "][" + System.currentTimeMillis() + "]", "Action : " + action + "; Player : " + pseudo + "; Information : " + result + "; Location : " + location + "; World : " + world + " .");
+        logs++;
+
+        if(logs >= 1000) {
+            logs = 0;
+            try {
+                config.save(todayFile);
+            } catch(IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void logToDiscord(String pseudo, String action, String location, String world, String result) {
+        SetupDiscordBot bot = plugin.getDiscordBot();
+        if(bot.isBotOnline()) {
+            if(isDiscordLogEnable(action)) {
+                if(plugin.getConfig().getBoolean("discord.enable_live_logs") && plugin.getConfig().contains("discord.live_logs_channel_id")) {
+                    bot.sendDirectLogs(getLastLogId() + 1, ActionUtils.getFormattedNameForActions(action), result, pseudo, world, location, action);
+                }
             }
         }
     }
 
     public List<String> getAllLogs(boolean isWebsiteRequest, boolean canViewLocation) throws SQLException {
-        if (connection == null || connection.isClosed() || !connection.isValid(2)) {
+        if(connection == null || connection.isClosed() || !connection.isValid(2)) {
             reconnect(); 
         }
         List<String> logs = new ArrayList<>();
 
         boolean hideLocation = plugin.getConfig().getBoolean("website.hide-coordinates-in-logs") || !canViewLocation;
-        String sql = "SELECT * FROM watchlogs_logs ORDER BY id DESC";
+        StringBuilder sqlBuilder = new StringBuilder("SELECT * FROM watchlogs_logs");
+        List<Object> parameters = new ArrayList<>();
 
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
+        if(isWebsiteRequest) {
+            String configTimeLimit = plugin.getConfig().getString("website.website-log-time-limit-showed", "7d");
+            Timestamp timeThreshold = calculateTimeThreshold(configTimeLimit);
+            if(timeThreshold != null) {
+                sqlBuilder.append(" WHERE timestamp >= ?");
+                parameters.add(timeThreshold);
+            }
+        }
+
+        sqlBuilder.append(" ORDER BY id DESC");
+        String sql = sqlBuilder.toString();
+
+        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            for(int i = 0; i < parameters.size(); i++) {
+                pstmt.setObject(i + 1, parameters.get(i));
+            }
+
+            try(ResultSet rs = pstmt.executeQuery()) {
+                while(rs.next()) {
                     int logId = rs.getInt("id");
                     String pseudo = rs.getString("pseudo");
                     String action = rs.getString("action");
@@ -793,7 +839,7 @@ public class DatabaseManager {
                     logs.add(logJson.toString());
                 }
             }
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
         }
 
@@ -807,7 +853,7 @@ public class DatabaseManager {
         parameters.add(playerName);
         
         try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            for (int i = 0; i < parameters.size(); i++) {
+            for(int i = 0; i < parameters.size(); i++) {
                 pstmt.setObject(i + 1, parameters.get(i));
             }
             
@@ -826,8 +872,8 @@ public class DatabaseManager {
 
     public void insertJsonLog(int id, String pseudo, String action, String location, String world, String result, String timestamp, boolean forceId) {
     	if(!forceId) {
-            String sql = "INSERT INTO watchlogs_logs (id, pseudo, action, location, world, result, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)";
-            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            String sql = "INSERT INTO watchlogs_logs(id, pseudo, action, location, world, result, timestamp) VALUES(?, ?, ?, ?, ?, ?, ?)";
+            try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
                 pstmt.setInt(1, id + 1);
                 pstmt.setString(2, pseudo);
                 pstmt.setString(3, action);
@@ -836,15 +882,15 @@ public class DatabaseManager {
                 pstmt.setString(6, result);
                 pstmt.setTimestamp(7, Timestamp.valueOf(timestamp));
                 pstmt.executeUpdate();
-            } catch (SQLException e) {
+            } catch(SQLException e) {
                 e.printStackTrace();
             }
     	} else {
-    		String sql = "INSERT INTO watchlogs_logs (id, pseudo, action, location, world, result, timestamp) " +
-    	             "VALUES (?, ?, ?, ?, ?, ?, ?) " +
+    		String sql = "INSERT INTO watchlogs_logs(id, pseudo, action, location, world, result, timestamp) " +
+    	             "VALUES(?, ?, ?, ?, ?, ?, ?) " +
     	             "ON DUPLICATE KEY UPDATE pseudo = VALUES(pseudo), action = VALUES(action), location = VALUES(location), world = VALUES(world), result = VALUES(result), timestamp = VALUES(timestamp)";
 
-    	try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+    	try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
     	    pstmt.setInt(1, id);
     	    pstmt.setString(2, pseudo);
     	    pstmt.setString(3, action);
@@ -853,7 +899,7 @@ public class DatabaseManager {
     	    pstmt.setString(6, result);
             pstmt.setTimestamp(7, Timestamp.valueOf(timestamp));
     	    pstmt.executeUpdate();
-    	} catch (SQLException e) {
+    	} catch(SQLException e) {
     	    e.printStackTrace();
     	   }
     	}
@@ -863,16 +909,16 @@ public class DatabaseManager {
 		return plugin.getConfig().getBoolean("enable-discord-logs." + logName);
 	}
     
-    public List<String> getLogs(int x, int y, int z, String world) {
+    public List<String> getLogs(int x, int y, int z, String world, int limit) {
         String prefix = plugin.getConfig().getBoolean("use-prefix") ? translateString(plugin.getConfig().getString("prefix")) : "";
         List<String> logs = new ArrayList<>();
-        String sql = "SELECT * FROM watchlogs_logs WHERE location = ? AND world = ? AND (action = 'block-place' OR action = 'block-break' OR action = 'block-explosion') ORDER BY id DESC";
+        String sql = "SELECT * FROM watchlogs_logs WHERE location = ? AND world = ? AND(action = 'block-place' OR action = 'block-break' OR action = 'block-explosion') ORDER BY id DESC LIMIT " + limit;
 
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, x + "/" + y + "/" + z);
             pstmt.setString(2, world);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
+            try(ResultSet rs = pstmt.executeQuery()) {
+                while(rs.next()) {
                     int id = rs.getInt("id");
                     String pseudo = rs.getString("pseudo");
                     String action = rs.getString("action");
@@ -881,12 +927,12 @@ public class DatabaseManager {
                     String result = rs.getString("result");
                     String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
                     logs.add(prefix + translateString("&cID &7" + id + "&c | " + pseudo + " : &7" + action + " at " + timestamp + "\n"
-                    		+ prefix + "&cWorld Information: &7" + worldName + " (" + location + ") \n"
+                    		+ prefix + "&cWorld Information: &7" + worldName + "(" + location + ") \n"
                     		+ prefix + "&cOther Information : &7" + result + "\n&7]---------------------------["));
                     
                 }
             }
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
         }
         return logs;
@@ -895,13 +941,13 @@ public class DatabaseManager {
     public List<String> getContainerLogs(int x, int y, int z, String world) {
         String prefix = plugin.getConfig().getBoolean("use-prefix") ? translateString(plugin.getConfig().getString("prefix")) : "";
         List<String> logs = new ArrayList<>();
-        String sql = "SELECT * FROM watchlogs_logs WHERE location = ? AND world = ? AND (action = 'container-transaction' OR action = 'container-open') ORDER BY id DESC";
+        String sql = "SELECT * FROM watchlogs_logs WHERE location = ? AND world = ? AND(action = 'container-transaction' OR action = 'container-open') ORDER BY id DESC";
 
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, x + "/" + y + "/" + z);
             pstmt.setString(2, world);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
+            try(ResultSet rs = pstmt.executeQuery()) {
+                while(rs.next()) {
                     int id = rs.getInt("id");
                     String pseudo = rs.getString("pseudo");
                     String action = rs.getString("action");
@@ -910,11 +956,11 @@ public class DatabaseManager {
                     String result = rs.getString("result");
                     String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
                     logs.add(prefix + translateString("&cID &7" + id + "&c | " + pseudo + " : &7" + action + " at " + timestamp + "\n"
-                    		+ prefix + "&cWorld Information: &7" + worldName + " (" + location + ") \n"
+                    		+ prefix + "&cWorld Information: &7" + worldName + "(" + location + ") \n"
                     		+ prefix + "&cOther Information : &7" + result + "\n&7]---------------------------["));
                 }
             }
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
         }
         return logs;
@@ -926,12 +972,12 @@ public class DatabaseManager {
 
         try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, id);
-            try (ResultSet rs = pstmt.executeQuery()) {
+            try(ResultSet rs = pstmt.executeQuery()) {
                 if(rs.next()) {
                     location = rs.getString("location");
                 }
             }
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
         }
 
@@ -949,7 +995,7 @@ public class DatabaseManager {
                     world = rs.getString("world");
                 }
     		}
-    	} catch (SQLException e) {
+    	} catch(SQLException e) {
             e.printStackTrace();
         }
     	
@@ -967,8 +1013,8 @@ public class DatabaseManager {
                 } else {
                     info.append("Connection Status: Disconnected\n");
                 }
-            } catch (SQLException e) {
-                info.append("Connection Status: Disconnected (Exception: ").append(e.getMessage()).append(")\n");
+            } catch(SQLException e) {
+                info.append("Connection Status: Disconnected(Exception: ").append(e.getMessage()).append(")\n");
             }
         } else {
             info.append("Connection Status: Disconnected\n");
@@ -980,11 +1026,11 @@ public class DatabaseManager {
                 connection.createStatement().execute("/* ping */ SELECT 1");
                 long ping = System.currentTimeMillis() - start;
                 info.append("Ping: ").append(ping).append(" ms\n");
-            } catch (SQLException e) {
-                info.append("Ping: N/A (Exception: ").append(e.getMessage()).append(")\n");
+            } catch(SQLException e) {
+                info.append("Ping: N/A(Exception: ").append(e.getMessage()).append(")\n");
             }
         } else {
-            info.append("Ping: N/A (Connection is null)\n");
+            info.append("Ping: N/A(Connection is null)\n");
         }
 
         return info.toString();
@@ -992,12 +1038,12 @@ public class DatabaseManager {
 
     public int getLastLogId() {
         String sql = "SELECT MAX(id) AS max_id FROM watchlogs_logs";
-        try (Statement stmt = connection.createStatement();
+        try(Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if(rs.next()) {
                 return rs.getInt("max_id");
             }
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
         }
         return -1;

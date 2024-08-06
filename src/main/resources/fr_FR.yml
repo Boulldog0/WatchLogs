@@ -7,7 +7,7 @@ messages:
   help-message:
     - "&6==============&7[&bWatchLogs - Aide&7]&6=============="
     - "&7/wl help - Affiche ce message d'aide."
-    - "&7/wl tool - Active ou désactive l'outil de logs."
+    - "&7/wl tool <setlimit> <limit> - Active ou désactive l'outil de logs/ Défini la limite de l'outil de logs'."
     - "&7/wl database - Affiche les informations de la base de données."
     - "&7/wl page <numéro> - Affiche les logs pour la page spécifiée."
     - "&7/wl tpto <id> - Téléporte à l'emplacement de l'action avec l'id spécifié."
@@ -16,6 +16,7 @@ messages:
     - "&7/wl export <lignes> <paramètres> - Exporter un certain nombre de lignes dans un fichier .json avec des paramètres spécifiés."
     - "&7/wl gdeath <id> - Donne l'inventaire relié à une mort précise."
     - "&7/wl search <paramètres> - Recherche des logs avec les paramètres spécifiés."
+    - "&7/wl website <givecode/deleteaccount/port> <args> - Commandes relatives au site internet."
     - "&6========================================================"
   #Message indiquant que l'outil de logs a été correctement supprimé.
   tool-correctly-removed: "&aL'outil de logs à correctement été supprimé."
@@ -34,7 +35,7 @@ messages:
   #Message d'utilisation incorrecte de la commande /wl giveitem.
   usage-giveitem: "&cUtilisation : /wl giveitem <id>"
   #Message d'utilisation incorrecte de la commande /wl website
-  usage-website: "&cUtilisation : /wl website <givecode/deleteaccount> <args>"
+  usage-website: "&cUtilisation : /wl website <givecode/deleteaccount/port> <args>"
   #Message d'erreur envoyé lorsqu'un joueur tente d'utiliser le /wl giveitem alors que le module est désactivé.
   module-item-reborn-disable: "&cLe module de regénération des items est désactivé."
   #Message d'erreur lorsque l'id donné n'est pas un id d'action avec les items valide.
@@ -84,7 +85,7 @@ messages:
   #Message en cas d'absence de logs correspondantes.
   no-matching-entries: "&cAucune entrée correspondante trouvée."
   #Message affichant les logs trouvées.
-  logs-found: "&aLogs trouvés (Page %d/%d) :"
+  logs-found: "&aLogs trouvés (Page %d/%d) (Limite: %d) :"
   #Message indiquant comment accéder à la page suivante des logs.
   next-page: "&cTapez /wl page "
   #Message d'erreur lorsque le numéro de page spécifié est trop élevé.
@@ -105,6 +106,14 @@ messages:
   account_correctly_deleted: "&aCompte correctement supprimé de la base de donnée !"
   #Message sent when an error occured an account delete.
   error_when_account_delete: "&cUne erreur est surevenue lors de la tentative de suppression du compte dans la base de donnée. Regardez la console pour plus d'informations."
+  #Message sent when player dont gave a number with the limit filter
+  invalid-limit-format: "&cVous devez fournir un nombre valide pour le filtre limite (Positif et valide) !"
+  #Message d'erreur envoyé lorsqu'un joueur tente d'utiliser la commmande /wl tool setlimit de la mauvaise manière.
+  usage-tool-setlimit: "&cUtilisation : /wl tool setlimit <limite>"
+  #Message d'erreur envoyé lorsqu'un joueur ne met pas un integer valide avec la commande /wl tool setlimit
+  wrong-integer-format-setlimit: "&cVous devez mettre un chiffre valide et supérieur à 0 pour cette commande !"
+  #Message envoyé lorsque la limite avec la commande /wl tool setlimit à correctement été définie !
+  limit-correctly-set: "&aLimite correctement définie !"
 
 discord:
   #Titre de la commande d'information du bot et du plugin.

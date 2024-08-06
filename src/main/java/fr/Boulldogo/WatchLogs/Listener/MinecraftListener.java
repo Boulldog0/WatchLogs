@@ -1,5 +1,7 @@
 package fr.Boulldogo.WatchLogs.Listener;
 
+import java.util.List;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -12,6 +14,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
@@ -92,7 +95,7 @@ public class MinecraftListener implements Listener {
         int data = block.getData();
         if(isLogEnable("block-place") && !isLogResearch(player) && materialUtils.isBlockActivated(blockName)) {
             Location location = block.getLocation();
-            databaseManager.insertLog(player.getName(), "block-place", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(), "Block Type: " + blockName + (data != 0 ? ":" +  data : ""));
+            databaseManager.insertLog(player.getName(), "block-place", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(), "Block Type: " + blockName +(data != 0 ? ":" +  data : ""));
         }
     }
 
@@ -106,7 +109,7 @@ public class MinecraftListener implements Listener {
         int data = block.getData();
         if(isLogEnable("block-break") && materialUtils.isBlockActivated(blockName)) {
             Location location = block.getLocation();
-            databaseManager.insertLog(player.getName(), "block-break", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(), "Block Type: " + blockName + (data != 0 ? ":" +  data : ""));
+            databaseManager.insertLog(player.getName(), "block-break", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(), "Block Type: " + blockName +(data != 0 ? ":" +  data : ""));
         }
     }
 	
@@ -114,35 +117,46 @@ public class MinecraftListener implements Listener {
 	public void onInventoryOpen(InventoryOpenEvent e) {
 	    if(e.isCancelled()) return;
 	    Inventory inventory = e.getInventory();
-	    Player player = (Player) e.getPlayer();
+	    Player player =(Player) e.getPlayer();
 	    if(isContainer(inventory) && !databaseManager.isToolEnabled(player.getName())) {
 	        if(isLogEnable("container-open")) {
 	            Location location = e.getInventory().getLocation();
 	            String inventoryType = getContainerName(inventory.getType());
-	            databaseManager.insertLog(player.getName(), "container-open", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(), "Container: " + inventoryType);
+	            String inventoryName = e.getView().getTitle();
+	            databaseManager.insertLog(player.getName(), "container-open", (location == null ? "Unknow" : location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ()), player.getWorld().getName(), "Container: " + inventoryType + " | Container Name : " + inventoryName);
 	        }
 	    }
 	}
 	
-	@EventHandler
-	public void onBlockExplosion(BlockExplodeEvent e) {
-        if(e.isCancelled()) return;
-        if(e.getBlock().getType() == Material.AIR) return;
-        Block block = e.getBlock();
-        String blockName = materialUtils.getBlockName(block);
-        int data = block.getData();
-        if(isLogEnable("block-explosion") && materialUtils.isBlockActivated(blockName)) {
-            Location location = block.getLocation();
-            databaseManager.insertLog("Explosion", "block-explosion", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), block.getWorld().getName(), "Block Type: " + blockName + (data != 0 ? ":" +  data : ""));
+    @EventHandler
+    public void onBlockExplosion(BlockExplodeEvent e) {
+        handleExplosion(e.blockList(), e.getBlock().getWorld().getName(), e.getBlock().toString());
+    }
+
+    @EventHandler
+    public void onEntityExplosion(EntityExplodeEvent e) {
+        handleExplosion(e.blockList(), e.getLocation().getWorld().getName(), e.getEntity().getName());
+    }
+
+    private void handleExplosion(List<Block> blocks, String worldName, String cause) {
+        for(Block block : blocks) {
+            if(block.getType() == Material.AIR) continue;
+            String blockName = materialUtils.getBlockName(block);
+            int data = block.getData();
+            if(isLogEnable("block-explosion") && materialUtils.isBlockActivated(blockName)) {
+                Location location = block.getLocation();
+                databaseManager.insertLog("Explosion", "block-explosion", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), worldName, "Block Type: " + blockName +(data != 0 ? ":" +  data : "" + " | Cause : " + cause)
+                );
+            }
         }
-	}
+    }
 
 	@EventHandler
 	public void onInventoryClick(InventoryClickEvent event) {
 	    if(event.isCancelled()) return;
 	    if(event.getClickedInventory() == null) return;
 	    if(event.getWhoClicked() instanceof Player) {
-	        Player player = (Player) event.getWhoClicked();
+	        Player player =(Player) event.getWhoClicked();
 	        Inventory clickedInventory = event.getClickedInventory();
 	        Inventory topInventory = event.getView().getTopInventory();
 	        if(clickedInventory != null && isContainer(topInventory)) {
@@ -150,8 +164,9 @@ public class MinecraftListener implements Listener {
 	            ItemStack currentItem = event.getCurrentItem();
 	            Location location = event.getInventory().getLocation();
 	            String containerName = getContainerName(topInventory.getType());
+	            String name = event.getView().getTitle();
 
-	            switch (action) {
+	            switch(action) {
 	                case MOVE_TO_OTHER_INVENTORY:
 	                case PICKUP_ONE:
 	                case PICKUP_SOME:
@@ -163,7 +178,7 @@ public class MinecraftListener implements Listener {
 	                case SWAP_WITH_CURSOR:
 	                case HOTBAR_SWAP:
 	                case HOTBAR_MOVE_AND_READD:
-	                    logTransfer(player, currentItem, clickedInventory, topInventory, location, containerName);
+	                    logTransfer(player, currentItem, clickedInventory, topInventory, location, containerName, name);
 	                    break;
 	                default:
 	                    break;
@@ -172,23 +187,22 @@ public class MinecraftListener implements Listener {
 	    }
 	}
 
-	private void logTransfer(Player player, ItemStack item, Inventory fromInventory, Inventory toInventory, Location location, String containerName) {
+	private void logTransfer(Player player, ItemStack item, Inventory fromInventory, Inventory toInventory, Location location, String containerName, String name) {
         String id = materialUtils.getItemName(item);
 	    if(isLogEnable("container-transaction") && materialUtils.isItemActivated(id)) {
 	        int data = getItemData(item);
 	        int amount = item.getAmount();
-	        String action = (toInventory.equals(player.getInventory())) ? "added" : "removed";
-	        String sign = (action.equals("added")) ? ChatColor.GREEN + "+" : ChatColor.RED + "-";
-	        databaseManager.insertLog(player.getName(), "container-transaction", (location == null ? "Unknow" : location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ()), player.getWorld().getName(), containerName + ", " + id + (data != 0 ? ":" +  data : "") + " (" + sign + " x" + amount + ")");
+	        databaseManager.insertLog(player.getName(), "container-transaction",(location == null ? "Unknow" : location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ()), player.getWorld().getName(), containerName + ", " + id +(data != 0 ? ":" +  data : "") + "(x" + amount + ")" + " | Container name: " + name);
 	        
 	        if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
-	        	databaseManager.addItemEntry(databaseManager.getLastLogId(), dataSerializer.serializeItemStack(item), false, -1);
+	        	databaseManager.addItemEntry(dataSerializer.serializeItemStack(item), false, -1);
 	        }
 	    }
 	}
 
 	private String getContainerName(InventoryType type) {
-	    switch (type) {
+		if(type == null) return "Unknow container";
+	    switch(type) {
 	        case CHEST:
 	            return "Chest";
 	        case DISPENSER:
@@ -203,6 +217,8 @@ public class MinecraftListener implements Listener {
 	            return "Shulker Box";
 	        case BARREL:
 	        	return "Barrel";
+	        case ENDER_CHEST:
+	        	return "Ender Chest";
 	        default:
 	            return "No-Vanilla Container";
 	    }
@@ -216,10 +232,10 @@ public class MinecraftListener implements Listener {
 		if(isLogEnable("item-drop") && materialUtils.isItemActivated(id)) {
 			Location location = e.getItemDrop().getLocation();
 			int data = getItemData(e.getItemDrop().getItemStack());
-			databaseManager.insertLog(player.getName(), "item-drop", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Item: " + id + (data != 0 ? ":" +  data : ""));
+			databaseManager.insertLog(player.getName(), "item-drop", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Item: " + id +(data != 0 ? ":" +  data : ""));
 			
 	        if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
-	        	databaseManager.addItemEntry(databaseManager.getLastLogId(), dataSerializer.serializeItemStack(e.getItemDrop().getItemStack()), false, -1);
+	        	databaseManager.addItemEntry(dataSerializer.serializeItemStack(e.getItemDrop().getItemStack()), false, -1);
 	        }
 		}	
     }
@@ -232,10 +248,10 @@ public class MinecraftListener implements Listener {
 		if(isLogEnable("item-pickup") && materialUtils.isItemActivated(id)) {
 			Location location = e.getItem().getLocation();
 			int data = getItemData(e.getItem().getItemStack());
-			databaseManager.insertLog(player.getName(), "item-pickup", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Item: " + id + (data != 0 ? ":" +  data : ""));
+			databaseManager.insertLog(player.getName(), "item-pickup", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Item: " + id +(data != 0 ? ":" +  data : ""));
 			
 	        if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
-	        	databaseManager.addItemEntry(databaseManager.getLastLogId(), dataSerializer.serializeItemStack(e.getItem().getItemStack()), false, -1);
+	        	databaseManager.addItemEntry(dataSerializer.serializeItemStack(e.getItem().getItemStack()), false, -1);
 	        }
 		}
     }
@@ -247,10 +263,10 @@ public class MinecraftListener implements Listener {
 		if(isLogEnable("item-break") && materialUtils.isItemActivated(id)) {
 			Location location = e.getPlayer().getLocation();
 			int data = getItemData(e.getBrokenItem());
-			databaseManager.insertLog(player.getName(), "item-break", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Item: " + id + (data != 0 ? ":" +  data : ""));
+			databaseManager.insertLog(player.getName(), "item-break", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Item: " + id +(data != 0 ? ":" +  data : ""));
 			
 	        if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
-	        	databaseManager.addItemEntry(databaseManager.getLastLogId(), dataSerializer.serializeItemStack(e.getBrokenItem()), false, -1);
+	        	databaseManager.addItemEntry(dataSerializer.serializeItemStack(e.getBrokenItem()), false, -1);
 	        }
 		}	
     }
@@ -265,17 +281,18 @@ public class MinecraftListener implements Listener {
 
 		if(isLogEnable("player-death-loot")) {
 			int deathId = databaseManager.getLastDeathId() + 1;
-			for (int i = 0; i < e.getDrops().size(); i++) {
-		        if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
-		        	databaseManager.addItemEntry(databaseManager.getLastLogId(), dataSerializer.serializeItemStack(e.getDrops().get(i)), true, deathId);
-		        }
-		        boolean rebornSystem = plugin.getConfig().getBoolean("use-item-reborn-system");
-		        plugin.getLogger().info("Value of reborn : " + String.valueOf(rebornSystem));
-				Location location = e.getEntity().getLocation();
-				String id = materialUtils.getItemName(e.getDrops().get(i));
-				if(materialUtils.isItemActivated(id)) {
-					int data = getItemData(e.getDrops().get(i));
-					databaseManager.insertLog(player.getName(), "player-death-loot", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Item: " + id + (data != 0 ? ":" +  data : "") + (rebornSystem ? " | Death ID : " + deathId : ""));	
+			if(!e.getDrops().isEmpty()) {
+				for(int i = 0; i < e.getDrops().size(); i++) {
+			        if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
+			        	databaseManager.addItemEntry(dataSerializer.serializeItemStack(e.getDrops().get(i)), true, deathId);
+			        }
+			        boolean rebornSystem = plugin.getConfig().getBoolean("use-item-reborn-system");
+					Location location = e.getEntity().getLocation();
+					String id = e.getDrops().get(i).getType().toString();
+					if(materialUtils.isItemActivated(id)) {
+						int data = getItemData(e.getDrops().get(i));
+						databaseManager.insertLog(player.getName(), "player-death-loot", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Item: " + id +(data != 0 ? ":" +  data : "") + (rebornSystem ? " | Death ID : " + deathId : ""));	
+					}
 				}
 			}
 		}
@@ -290,6 +307,9 @@ public class MinecraftListener implements Listener {
             String[] commandAliases = command.split("\\s+");
             String commandName = commandAliases[0];
             if(!plugin.getConfig().getStringList("blacklist-commands").isEmpty() && !plugin.getConfig().getStringList("blacklist-commands").contains(commandName)) {
+                Location location = player.getLocation();
+                databaseManager.insertLog(player.getName(), "commands", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(), "Executed command: " + command);
+            } else if(plugin.getConfig().getStringList("blacklist-commands").isEmpty()) {
                 Location location = player.getLocation();
                 databaseManager.insertLog(player.getName(), "commands", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(), "Executed command: " + command);
             }
@@ -318,11 +338,11 @@ public class MinecraftListener implements Listener {
         Action action = e.getAction(); 
         Location location = e.getClickedBlock().getLocation();
         
-         if(block != null && block.getType() != Material.AIR && (action == Action.LEFT_CLICK_BLOCK || action == Action.RIGHT_CLICK_BLOCK)) {
+         if(block != null && block.getType() != Material.AIR &&(action == Action.LEFT_CLICK_BLOCK || action == Action.RIGHT_CLICK_BLOCK)) {
              if(isLogEnable("interact-block") && materialUtils.isBlockActivated(materialUtils.getBlockName(block)) && databaseManager.isBlockInteract(location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getName())) {
                  String id = materialUtils.getBlockName(block);
                  int data = block.getData();
-                 databaseManager.insertLog(player.getName(), "interact-block", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(), "Block ID: " + id + (data != 0 ? ":" +  data : ""));
+                 databaseManager.insertLog(player.getName(), "interact-block", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(), "Block ID: " + id +(data != 0 ? ":" +  data : ""));
              }
          }
         
@@ -331,7 +351,7 @@ public class MinecraftListener implements Listener {
                 Location location2 = player.getLocation();
     			String id = materialUtils.getItemName(stack);
                 int data = getItemData(stack);
-                databaseManager.insertLog(player.getName(), "interact-item", location2.getBlockX() + "/" + location2.getBlockY() + "/" + location2.getBlockZ(), player.getWorld().getName(), "Item: " + id + (data != 0 ? ":" +  data : ""));
+                databaseManager.insertLog(player.getName(), "interact-item", location2.getBlockX() + "/" + location2.getBlockY() + "/" + location2.getBlockZ(), player.getWorld().getName(), "Item: " + id +(data != 0 ? ":" +  data : ""));
             }
         }
     }
@@ -344,7 +364,7 @@ public class MinecraftListener implements Listener {
     	Entity entity = e.getRightClicked();
     	if(isLogEnable("interact-entity")) {
 			Location location = player.getLocation();
-			databaseManager.insertLog(player.getName(), "interact-entity", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Entity name: " + entity.getName() + " (ID: " + entity.getEntityId() + ")");
+			databaseManager.insertLog(player.getName(), "interact-entity", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Entity name: " + entity.getName() + "(ID: " + entity.getEntityId() + ")");
     	}
     }
     
@@ -361,7 +381,7 @@ public class MinecraftListener implements Listener {
         if(item != null) {
             MaterialData data = item.getData();
             if(data != null) {
-                return (int)data.getData();
+                return(int)data.getData();
             }
         }
         return null; 

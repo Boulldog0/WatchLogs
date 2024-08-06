@@ -91,29 +91,58 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                 return true;
             }
             
-            if(databaseManager.playerExists(player.getName()) && databaseManager.isToolEnabled(player.getName())) {
-                databaseManager.setToolEnabled(player.getName(), false);
-                ItemStack logBlock = createLogBlock();
-                PlayerInventory inventory = player.getInventory();
-                ItemStack[] contents = inventory.getContents();
-                for(int i = 0; i < contents.length; i++) {
-                    if(contents[i] != null && contents[i].isSimilar(logBlock)) {
-                        inventory.setItem(i, new ItemStack(Material.AIR)); 
+            if(args.length < 2) {
+                if(databaseManager.playerExists(player.getName()) && databaseManager.isToolEnabled(player.getName())) {
+                    databaseManager.setToolEnabled(player.getName(), false);
+                    ItemStack logBlock = createLogBlock();
+                    PlayerInventory inventory = player.getInventory();
+                    ItemStack[] contents = inventory.getContents();
+                    for(int i = 0; i < contents.length; i++) {
+                        if(contents[i] != null && contents[i].isSimilar(logBlock)) {
+                            inventory.setItem(i, new ItemStack(Material.AIR)); 
+                        }
+                    }
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.tool-correctly-removed")));
+                    return true;
+                } else {    
+                    databaseManager.checkOrCreatePlayer(player.getName());
+                    if(player.getInventory().getItemInHand().getType() == Material.AIR) {
+                        databaseManager.setToolEnabled(player.getName(), true);
+                        player.getInventory().setItemInHand(createLogBlock());
+                        player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.tool-correctly-given")));
+                        return true;
+                    } else {
+                        player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.you-have-item-in-hand")));
+                        return true;
                     }
                 }
-                player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.tool-correctly-removed")));
+            } else {
+            	if(args.length < 3) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.usage-tool-setlimit")));
+                    return true;
+            	}
+            	
+            	if(!args[1].equals("setlimit")) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.usage-tool-setlimit")));
+                    return true;
+            	}
+            	
+            	if(!isInteger(args[2])) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.wrong-integer-format-setlimit")));
+                    return true;
+            	}
+            	
+            	int limit = Integer.parseInt(args[2]);
+            	
+            	if(limit <= 0) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.wrong-integer-format-setlimit")));
+                    return true;
+            	}
+            	
+            	PlayerSession session = plugin.getPlayerSession(player);
+            	session.setToolLimit(limit);
+                player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.limit-correctly-set")));
                 return true;
-            } else {    
-                databaseManager.checkOrCreatePlayer(player.getName());
-                if(player.getInventory().getItemInHand().getType() == Material.AIR) {
-                    databaseManager.setToolEnabled(player.getName(), true);
-                    player.getInventory().setItemInHand(createLogBlock());
-                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.tool-correctly-given")));
-                    return true;
-                } else {
-                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.you-have-item-in-hand")));
-                    return true;
-                }
             }
         } else if(subCommand.equals("giveitem")) {
             if(!player.hasPermission("watchlogs.giveitem")) {
@@ -185,7 +214,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             
             if(plugin.getConfig().getBoolean("cancel-if-inventory-is-not-empty")) {
                 if(player.getInventory().firstEmpty() == -1) {
-                	player.sendMessage(prefix + plugin.getLang().getString("messages.inventory-is-not-empty"));
+                	player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.inventory-is-not-empty")));
                 	return true;
                 }
             }
@@ -204,7 +233,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             
             String command = args[1];
             
-            if(!command.equals("givecode") && !command.equals("deleteaccount")) {
+            if(!command.equals("givecode") && !command.equals("deleteaccount") && !command.equals("port")) {
             	player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.usage-website")));
             	return true;
             }
@@ -256,7 +285,11 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             		player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.error_when_account_delete")));
             		return true;
             	}
-            }
+            } else if(command.equals("port")) {
+        		int port = plugin.getConfig().getInt("website.website_port");
+        		player.sendMessage(prefix + ChatColor.GREEN + "Web server binded on port " + port + ".");
+        		return true;
+        	}
         } else if(subCommand.equals("database")) {
             if(!player.hasPermission("watchlogs.database")) {
                 player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.have-not-permission")));
@@ -415,13 +448,14 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                     return true;
                 }
                 PlayerSession session = plugin.getPlayerSession(player);
+                int limit = session.getLimit();
                 if(session.isToolLog()) {
                     ToolListener toolListener = new ToolListener(plugin, databaseManager);
                     session.setCurrentPage(page);
                     toolListener.showLogs(player, page);
                 } else {
                     session.setCurrentPage(page);
-                    this.showPage(session.getCurrentLogs(), page, player);
+                    this.showPage(session.getCurrentLogs(), page, player, limit);
                 }
             } catch (NumberFormatException e) {
                 player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.invalid-page-number")));
@@ -492,6 +526,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             String timeFilter = "undefined";
             boolean useTimestamp = false;
             boolean useRayon = false;
+            int limit = 100;
 
             for(String argument : arguments) {
                 if(argument.startsWith("p:")) {
@@ -521,6 +556,17 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                         player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.invalid-time-format")));
                         return true;
                     }
+                } else if(argument.startsWith("l:")) {
+                	try {
+                		limit = Integer.parseInt(argument.substring(2));
+                		if(limit <= 0) {
+                            player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.invalid-limit-format")));
+                            return true;
+                		}
+                	} catch(NumberFormatException e) {
+                        player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.invalid-limit-format")));
+                        return true;
+                	}
                 } else {
                     player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.invalid-argument")) + argument);
                     return true;
@@ -531,14 +577,15 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             PlayerSession session = plugin.getPlayerSession(player);
             session.setToolLog(false);
             session.setCurrentPage(1);
+            session.setLimit(limit);
             List<String> searchResult = databaseManager.getLogs(
                 worldSearch, playerSearch, useRayon,
                 location.getBlockX(), location.getBlockY(), location.getBlockZ(),
-                radiusSearch, actionSearch, filterSearch, timeFilter, useTimestamp
+                radiusSearch, actionSearch, filterSearch, timeFilter, useTimestamp, limit
             );
             session.setCurrentLogs(searchResult);
 
-            showPage(searchResult, 1, player);
+            showPage(searchResult, 1, player, limit);
             return true;
         }
         return false;
@@ -571,7 +618,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                     completions = handleImportTabCompletion(args);
                     break;
                 case "website":
-                	completions = Arrays.asList("givecode", "deleteaccount");
+                	completions = Arrays.asList("givecode", "deleteaccount", "port");
                 default:
                     break;
             }
@@ -591,7 +638,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
         List<String> completions = new ArrayList<>();
         List<String> usedParams = Arrays.asList(args).subList(1, args.length - 1);
 
-        List<String> searchParams = new ArrayList<>(Arrays.asList("p:", "w:", "a:", "r:", "f:", "t:"));
+        List<String> searchParams = new ArrayList<>(Arrays.asList("p:", "w:", "a:", "r:", "f:", "t:", ":l"));
         searchParams.removeIf(param -> usedParams.stream().anyMatch(arg -> arg.startsWith(param)));
 
         String currentArg = args[args.length - 1].toLowerCase();
@@ -712,7 +759,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
         return completions;
     }
     
-    public void showPage(List<String> searchResult, int page, Player player) {
+    public void showPage(List<String> searchResult, int page, Player player, int limit) {
         String prefix = plugin.getConfig().getBoolean("use-prefix") ? translateString(plugin.getConfig().getString("prefix")) : "";
         if(searchResult.isEmpty()) {
             player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.no-matching-entries")));
@@ -721,7 +768,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             int totalPage = (searchResult.size() + (entries - 1)) / entries;
             if(page <= totalPage) {
                 player.sendMessage(""); 
-                player.sendMessage(prefix + String.format(translateString(plugin.getLang().getString("messages.logs-found")), page, totalPage)); 
+                player.sendMessage(prefix + String.format(translateString(plugin.getLang().getString("messages.logs-found")), page, totalPage, limit)); 
                 player.sendMessage("");
                 int startIndex = (page - 1) * entries;
                 int endIndex = Math.min(startIndex + entries, searchResult.size()); 
@@ -767,20 +814,20 @@ public class MainCommand implements CommandExecutor, TabCompleter{
     	String prefix = plugin.getConfig().getBoolean("use-prefix") ? translateString(plugin.getConfig().getString("prefix")) : "";
         List<ItemStack> items = databaseManager.getItemsByDeathId(deathId);
         if(items.isEmpty()) {
-            player.sendMessage(prefix + plugin.getLang().getString("messages.no-death-given-with-this-id"));
+            player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.no-death-given-with-this-id")));
             return;
         }
 
         for(ItemStack item : items) {
             if(player.getInventory().firstEmpty() == -1) {
                 player.getWorld().dropItemNaturally(player.getLocation(), item);
-                player.sendMessage(prefix + plugin.getLang().getString("messages.advertisment-item-drop-in-ground"));
+                player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.advertisment-item-drop-in-ground")));
             } else {
                 player.getInventory().addItem(item);
             }
         }
 
-        player.sendMessage(prefix + plugin.getLang().getString("messages.item-death-correctly-given"));
+        player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.item-death-correctly-given")));
     }
 
     public boolean isValidSubcommand(String s) {

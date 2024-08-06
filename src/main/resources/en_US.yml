@@ -7,7 +7,7 @@ messages:
   help-message:
     - "&6==============&7[&bWatchLogs Help&7]&6=============="
     - "&7/wl help - Shows this help message."
-    - "&7/wl tool - Toggles the log tool."
+    - "&7/wl tool <setlimit> <limit> - Toggles the log tool/ Define the limit of log tool."
     - "&7/wl database - Shows database info."
     - "&7/wl page <number> - Shows logs for the specified page."
     - "&7/wl tpto <id> - Teleports to the location of the log entry with the specified id."
@@ -16,6 +16,7 @@ messages:
     - "&7/wl import <filename> <use-origin-id> - Import datas by .json file."
     - "&7/wl export <lines> <settings> - Export a certains number of lines in .json file with specified settings."
     - "&7/wl search <settings> - Searches logs with the specified settings."
+    - "&7/wl website <givecode/deleteaccount/port> <args> - Command for the website."
     - "&6========================================================"
   #Message confirming that the log tool has been correctly removed.
   tool-correctly-removed: "&aThe log tool has been correctly removed."
@@ -26,7 +27,7 @@ messages:
   #Usage message for the /wl page command.
   usage-page: "&cUsage: /wl page <number>"
   #Usage message for the /wl website commande
-  usage-website: "&cUsage : /wl website <givecode/deleteaccount> <args>"
+  usage-website: "&cUsage : /wl website <givecode/deleteaccount/port> <args>"
   #Error message when the page number is not positive.
   page-number-positive: "&cPage number must be positive."
   #Error message for an invalid page number.
@@ -84,7 +85,7 @@ messages:
   #Message displayed when no matching entries are found.
   no-matching-entries: "&cNo matching entries found."
   #Message displaying found logs with page information.
-  logs-found: "&aLogs found (Page %d/%d):"
+  logs-found: "&aLogs found (Page %d/%d) (Limit: %d):"
   #Instruction for typing the next page command.
   next-page: "&cType /wl page "
   #Error message when the specified page number exceeds the maximum pages.
@@ -105,6 +106,14 @@ messages:
   account_correctly_deleted: "&aAccount correctly deleted in database !"
   #Message sent when an error occured an account delete.
   error_when_account_delete: "&cAn error occurred when trying to delete account in the database. Please check console for more informations."
+  #Message sent when player dont gave a number with the limit filter
+  invalid-limit-format: "&cYou must give a valid number for limit filter (Positive and valid) !"
+  #Usage message for /wl tool setlimit command
+  usage-tool-setlimit: "&cUsage : /wl tool setlimit <limit>"
+  #Message sent when a player try to execute the /wl tool setlimit command, but he give a wrong integer
+  wrong-integer-format-setlimit: "&cYou must give a positive and valid integer for this command."
+  #Message sent when the limit has correctly set with the commande /wl tool setlimit
+  limit-correctly-set: "&aLimit correctly set !"
 
 discord:
   #Title of the bot and plugin information command.

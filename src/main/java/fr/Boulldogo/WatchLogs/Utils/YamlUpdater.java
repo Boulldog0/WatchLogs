@@ -1,9 +1,7 @@
 package fr.Boulldogo.WatchLogs.Utils;
 
 import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
 
 import fr.Boulldogo.WatchLogs.Main;
 
@@ -17,9 +15,7 @@ public class YamlUpdater {
 
     public YamlUpdater(Main plugin) {
         this.plugin = plugin;
-
-        LoaderOptions loaderOptions = new LoaderOptions();
-        this.yamlLoader = new Yaml(new Constructor(loaderOptions));
+        this.yamlLoader = new Yaml();
 
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);

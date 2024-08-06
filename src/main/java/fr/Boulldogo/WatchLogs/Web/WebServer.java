@@ -205,6 +205,11 @@ public class WebServer {
             res.type("application/json");
             return new Gson().toJson(logs);
         });
+        
+        get("/logs/limit", (req, res) -> {
+        	String limit = plugin.getConfig().getString("website.website-log-time-limit-showed");
+        	return new Gson().toJson(limit);
+        });
 
         get("/logs/search", (req, res) -> {
             String world = req.queryParams("world").equals("") ? "undefined" : req.queryParams("world");

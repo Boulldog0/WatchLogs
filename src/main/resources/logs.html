@@ -323,6 +323,16 @@
         .form-buttons input[disabled]:hover::after {
             opacity: 1;
         }
+		
+		.limit-container {
+			padding: 5px;
+			background-color: #CA0000;
+			border-radius: 10px;
+			width: 100%;
+			text-align: center;
+			color: #fff;
+			font-size: 18px;
+		}
     </style>
 </head>
 <body>
@@ -339,6 +349,9 @@
     </div>
     <div class="container">
         <h2>Logs</h2>
+		<div class="limit-container">
+			<div class="limit-container-txt"></div>
+		</div>
         <form id="searchForm">
             <div class="form-group">
                 <label for="world">World:</label>
@@ -403,6 +416,7 @@
             populateActions();
             populateWorlds();
             populatePermissions();
+			refreshLimit();
         });
         
         const searchForm = document.getElementById('searchForm');
@@ -582,6 +596,15 @@
                     console.error('Error fetching worlds:', error);
                });
         }
+		
+		function refreshLimit() {
+			fetch('/logs/limit')
+			   .then(response => response.json())
+			   .then(limit => {
+				    const limitContainer = document.querySelector(".limit-container-txt");
+					limitContainer.innerHTML = `⚠️ All logs shown here are from less or equals than ${limit} ago ⚠️`
+			  })
+		}
         
         function confirmLogout() {
             if (confirm('Are you sure you want to logout?')) {
