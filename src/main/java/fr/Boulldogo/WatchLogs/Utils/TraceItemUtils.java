@@ -28,11 +28,7 @@ public class TraceItemUtils {
     }
 
     private boolean isPersistentDataContainerAvailable() {
-        String version = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
-        String[] versionParts = version.replace("v", "").split("_");
-        int majorVersion = Integer.parseInt(versionParts[0]);
-        int minorVersion = Integer.parseInt(versionParts[1]);
-        return(majorVersion > 1) ||(majorVersion == 1 && minorVersion >= 13); 
+    	return plugin.getSpigotVersionAsInt() >= 1130;
     }
 
     public String createUUIDForItem() {

@@ -94,11 +94,10 @@ public class Main extends JavaPlugin {
 	    this.webUtils = new WebUtils();
 	    
 	    this.materialUtils = new MaterialUtils(this);
-	    this.dataSerializer = new ItemDataSerializer();
+	    this.dataSerializer = new ItemDataSerializer(this);
 	    this.serverUtils = new ServerUtils(this);
 	    
 	    YamlUpdater updater = new YamlUpdater(this);
-	    
 		
 		String lang = this.getConfig().getString("lang_file");
 		
@@ -293,6 +292,27 @@ public class Main extends JavaPlugin {
 		return version;
 	}
 	
+	public int getSpigotVersionAsInt() {
+	    String versionOnly = Bukkit.getBukkitVersion().split("-")[0];
+	    
+	    String[] versionParts = versionOnly.split("\\.");
+
+	    if(versionParts.length == 2) {
+	        versionOnly += ".0";
+	    }
+
+	    String versionAsString = versionOnly.replace(".", "");
+	    int versionAsInt;
+	    try {
+	        versionAsInt = Integer.parseInt(versionAsString);
+	    } catch (NumberFormatException e) {
+	        versionAsInt = 0;
+	    }
+
+	    return versionAsInt;
+	}
+
+
 	public void setUpToDate(boolean isUpToDate) {
 		this.isUpToDate = isUpToDate;
 	}

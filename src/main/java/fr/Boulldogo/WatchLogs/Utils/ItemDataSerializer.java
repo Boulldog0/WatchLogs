@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import de.tr7zw.nbtapi.NBTItem;
+import fr.Boulldogo.WatchLogs.Main;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -23,17 +24,15 @@ public class ItemDataSerializer {
 
     private static final Gson gson = new GsonBuilder().enableComplexMapKeySerialization().create();
     private final boolean usePersistentDataContainer;
+    private final Main plugin;
 
-    public ItemDataSerializer() {
+    public ItemDataSerializer(Main plugin) {
+    	this.plugin = plugin;
         this.usePersistentDataContainer = isPersistentDataContainerAvailable();
     }
 
     private boolean isPersistentDataContainerAvailable() {
-        String version = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
-        String[] versionParts = version.replace("v", "").split("_");
-        int majorVersion = Integer.parseInt(versionParts[0]);
-        int minorVersion = Integer.parseInt(versionParts[1]);
-        return(majorVersion > 1) ||(majorVersion == 1 && minorVersion >= 13);  
+    	return plugin.getSpigotVersionAsInt() >= 1130;
     }
 
     public String serializeItemStack(ItemStack itemStack) {
