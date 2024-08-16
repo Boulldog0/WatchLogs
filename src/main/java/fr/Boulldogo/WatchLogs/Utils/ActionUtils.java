@@ -11,7 +11,7 @@ public class ActionUtils {
 		actionList.addAll(Arrays.asList( "join", "leave", "teleport", "block-place", "block-break", "container-open", "container-transaction",
            "item-drop", "item-pickup", "item-break", "player-death", "player-death-loot", "commands", "send-message",
            "interact-item", "interact-block", "interact-entity", "block-explosion", "json-import", "json-export", 
-           "website-login", "website-logout", "website-logs-search", "website-register"));
+           "website-login", "website-logout", "website-logs-search", "website-register", "trace-item-action"));
 		return actionList;
 	}
 	
@@ -65,6 +65,8 @@ public class ActionUtils {
             	return "Website Logs Search";
             case "website-register":
             	return "Website Register";
+            case "trace-item-action":
+            	return "Trace Item Action";
             default:
                 return s + " (Formatted Name unknown)";
         }

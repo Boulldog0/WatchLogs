@@ -25,6 +25,9 @@ Welcome to WatchLogs, the ultimate Minecraft logging plugin! Packed with an arra
 - **🤖 Discord Bot Integration**: Configure the plugin and get information using Discord commands.
 - **🗃️ Database Storage**: Logs are stored in a MySQL or SQL database, providing efficient data management.
 - **🔄 Import-Export Data System**: Easily import and export data from the database.
+- **🗺️ Trace Item System**: You can set a tracer in an item, and retrace all the actions with that for know, for example, if a rare item is duplicated or no.
+- **💻💻 Multi Server Monitoring**: You can monitoring a lot of servers ( without Bungeecord ) in the same database, with the same web panel and with the same discord bot.
+
 
 ## 🚀 Upcoming Features
 
@@ -56,7 +59,28 @@ Welcome to WatchLogs, the ultimate Minecraft logging plugin! Packed with an arra
 | `/wl export <lines> <parameters>` | Export logs datas with given lines number (or all for export all outputs lines) in .json file with given settings. |
 | `/wl search <parameters>` | Search logs with the specified parameters.   |
 | `/wl website <givecode/deleteaccount/port>` | Give security code or delete account or give port from the website. |
+| `/wl traceitem <search/give/settrace/removetrace/check>` | Traceitem commands (explanations under) | 
 
+*How to use the traceitem command :*
+
+Search command : Use an trace UUID or dirrecty the item for have all the actions when the traced item is concerned
+Give command : You can give an item via console or player with a command. You can personnalize the item dirrectly with the command, and the item is automatically traced.
+
+**Traceitem give command utilities :**
+
+| Prefix | Utility                           | Example Usage                |
+|--------|-----------------------------------|------------------------------|
+| `name:`   | Give a custom name on the item          | `/wl traceitem give item:ITEM name:&cTest`         |
+| `lore:`   | Set custom lore on the item.           | `/wl traceitem give item:ITEM lore:&cTest\|&eTest`   |
+| `enchants:`   | Add enchantments on the item. | `/wl traceitem give item:ITEM enchants:sharpness:5,unbreaking:3`   |
+| `player:`   | Give a player for give the item. | `/wl traceitem give item:ITEM player:Steve`   |
+| `item:`   | The given item. | `/wl traceitem give item:ITEM`   |
+
+Notes : 
+
+- For separated different lines in the lore, you can use "|" between the two lines. Example : lore:Line1|Line2
+- For set a lot of enchants, you can separate them with a comma. Example : enchants:sharpness:5,unbreaking:3,mending:1
+ 
 **Aliases of WatchLogs commands :** `/watchlogs`, `/watchl`, `/wlogs`, `/wl`
 
 **Search and export command utilities :**
@@ -70,7 +94,7 @@ Welcome to WatchLogs, the ultimate Minecraft logging plugin! Packed with an arra
 | `f:`   | Search within a specific filter in result category. | `/wl f:NETHERITE_SWORD` |
 | `r:`   | Search within a specific radius around you. | `/wl search r:3`       |
 | `l:`| Search within a custom limit of results. | `/wl search l:90` |
-| `all` (export command only) | Export alldatas from the database. | `/wl export all all` |+
+| `all` (export command only) | Export alldatas from the database. | `/wl export all all` |
 
 These prefixes can be used to refine your search and find specific logs you're looking for. Multiple filters can be used in the same search. Example : `/wl search p:Steve a:block-break r:3` or `/wl search a:block-break w:event t:30m f:DIRT`. For export command, its the same system, with examples such as `/wl export all a:block-break` or `/wl export 100 p:Steve r:3 f:NETHERITE_SWORD`
 
@@ -93,6 +117,7 @@ These prefixes can be used to refine your search and find specific logs you're l
 | `watchlogs.website.view_location`| Allows to show location in the website logs. |
 | `watchlogs.website.search_permission`| Allows to use the search tool in the website. |
 | `watchlogs.website.delete_permission`| Allows to delete their account on the website. |
+| `watchlogs.traceitem` | Allows to use diffrents traceitem features. |
 
 ## 💻 Website Feature 
 
@@ -112,11 +137,11 @@ WatchLogs is released under the [GNU General Public License v3.0](https://www.gn
 
 ## ⚽ Goals of download
 
-❌ 100 Downloads
+✅ 100 Downloads
 
-❌ 200 Downloads
+✅ 200 Downloads
 
-❌ 250 Downloads
+✅ 250 Downloads
 
 ❌ 500 Downloads
 

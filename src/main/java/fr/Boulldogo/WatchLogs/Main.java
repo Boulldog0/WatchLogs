@@ -57,6 +57,8 @@ public class Main extends JavaPlugin {
     private WebUtils webUtils;
     private Random random = new Random();
     private PermissionChecker permissionChecker; 
+    private ServerUtils serverUtils;
+    private TraceItemUtils traceItemUtils;
     
 	public void onEnable() {
 		this.getLogger().info("==============[Enable Start of WatchLogs]==============");
@@ -93,6 +95,7 @@ public class Main extends JavaPlugin {
 	    
 	    this.materialUtils = new MaterialUtils(this);
 	    this.dataSerializer = new ItemDataSerializer();
+	    this.serverUtils = new ServerUtils(this);
 	    
 	    YamlUpdater updater = new YamlUpdater(this);
 	    
@@ -229,6 +232,7 @@ public class Main extends JavaPlugin {
         GithubVersion versionChecker = new GithubVersion(this);
         versionChecker.checkForUpdates();
 	    this.jsonDatabase = new JsonDatabase(this, databaseManager);
+	    this.traceItemUtils = new TraceItemUtils(this, databaseManager);
 		
 		this.getLogger().info("Spigot project : https://www.spigotmc.org/resources/⚙%EF%B8%8F-watchlogs-⚙%EF%B8%8F-ultimate-all-in-one-log-solution-1-7-1-20-6.117128/");
 		this.getLogger().info("Plugin WatchLogs v" + version + " by Boulldogo loaded correctly !");
@@ -277,6 +281,8 @@ public class Main extends JavaPlugin {
 		String version = this.getDescription().getVersion();
 		this.getLogger().info("Plugin WatchLogs v" + version + " by Boulldogo unloaded correctly !");
 		
+		databaseManager.markServerOffline();
+		
         if(discordBot != null && discordBot.getJDA() != null) {
             discordBot.getJDA().shutdown();
             getLogger().info("Discord bot shut down.");
@@ -305,6 +311,14 @@ public class Main extends JavaPlugin {
 	
 	public SetupDiscordBot getDiscordBot() {
 		return discordBot;
+	}
+	
+	public ServerUtils getServerUtils() {
+		return serverUtils;
+	}
+	
+	public TraceItemUtils getTraceItemUtils() {
+		return traceItemUtils;
 	}
 	
 	public void runSaveLogFile() {

@@ -66,6 +66,8 @@ messages:
   usage-search: "&cUsage: /wl search <settings>"
   #Usage message for the /wl giveitem command.
   usage-giveitem: "&cUsage : /wl giveitem <id>"
+  #Usage message for the /wl traceitem command
+  usage-traceitem: "&cUsage : /wl traceitem <search/give/settrace/removetrace/check> <settings>"
   #Usage message for the /wl export command.
   usage-export: "&cUsage : /wl export <number> <all/settings>"
   #Usage message for the /wl import command.
@@ -114,6 +116,17 @@ messages:
   wrong-integer-format-setlimit: "&cYou must give a positive and valid integer for this command."
   #Message sent when the limit has correctly set with the commande /wl tool setlimit
   limit-correctly-set: "&aLimit correctly set !"
+  multi-server-disable: "&cThe multiserver feature is disabled here, or the multiserver research feature is disable ! You cant search with argument 's:' !"
+  must-have-item-in-hand: "&cYou must have an item in your hand for execute this command !"
+  must-have-item-in-hand-search: "&cYou must have an item in your hand for execute this command, or give an UUID !"
+  item-not-traced: "&cThis item is not traced by the WatchLogs plugin !"
+  trace-item-header: "&6List of all actions with the traced item %u :"
+  trace-item-not-enable: "&cThe traceitem feature is disable !"
+  error-traceitem-db: "&4This item have a traceitem UUID, but we cant found it in the database !"
+  item-already-traced: "&cThis item is already traced ! Type /wl traceitem check with the item in your hand for have the UUID."
+  item-correctly-traced: "&2You have correctly set a trace UUID in this item !"
+  trace-correctly-removed: "&2The traceitem has been correctly deleted and removed from the database !"
+  trace-item-uuid: "&eUUID of the item inside your hands : %uuid"
 
 discord:
   #Title of the bot and plugin information command.
@@ -140,3 +153,4 @@ discord:
   log_location_hidden: ":x: Hiden by Administrator"
   #Field for the data about the log in a Discord log.
   log_data: ":scroll: Data about this log"
+  server-name: ":computer: Server"

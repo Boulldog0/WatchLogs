@@ -210,6 +210,21 @@ public class WebServer {
         	String limit = plugin.getConfig().getString("website.website-log-time-limit-showed");
         	return new Gson().toJson(limit);
         });
+        
+        get("/logs/multi_server_enable", (req, res) -> {
+        	boolean enable = plugin.getConfig().getBoolean("multi-server.enable");
+        	
+            Map<String, Boolean> ena = new HashMap<>();
+            ena.put("enable", enable);
+        	return new Gson().toJson(enable);
+        });
+        
+        get("/logs/server_list", (req, res) -> {
+        	List<String> servers = new ArrayList<>();
+        	servers.add("");
+        	servers.addAll(databaseManager.getServerInNetwork());
+        	return new Gson().toJson(servers);
+        });
 
         get("/logs/search", (req, res) -> {
             String world = req.queryParams("world").equals("") ? "undefined" : req.queryParams("world");
@@ -221,6 +236,7 @@ public class WebServer {
             String resultFilter = req.queryParams("resultFilter");
             String timeFilter = req.queryParams("timeFilter");
             boolean useTimestamp = !timeFilter.equals("undefined");
+            String serverName = req.queryParams("server").equals("") ? "undefined" : req.queryParams("server");
 
             String location = (xCoord.equals("undefined") ? "%" : xCoord) + "/"
                     + (yCoord.equals("undefined") ? "%" : yCoord) + "/"
@@ -257,6 +273,10 @@ public class WebServer {
                 	search = search + "TimeFilter : " + player + " | ";
                 }
                 
+                if(!serverName.equals("undefined")) {
+                	search = search + "Server : " + serverName + " | ";
+                }
+                
                 if(world.equals("undefined") && player.equals("undefined") && xCoord.equals("undefined") 
                 	&& yCoord.equals("undefined") && zCoord.equals("undefined") && action.equals("undefined") 
                 	&& resultFilter.equals("undefined") && timeFilter.equals("undefined")) {
@@ -270,7 +290,7 @@ public class WebServer {
             PermissionChecker permissionChecker = plugin.getPermissionChecker();
             boolean canViewLocation = permissionChecker.hasPermission(username, "watchlogs.website.view_location");
 
-            List<String> filteredLogs = databaseManager.getWebJsonLogs(world, player, location, action, resultFilter, timeFilter, useTimestamp, canViewLocation);
+            List<String> filteredLogs = databaseManager.getWebJsonLogs(world, player, location, action, resultFilter, timeFilter, useTimestamp, canViewLocation, serverName);
 
             res.type("application/json");
             return new Gson().toJson(filteredLogs);

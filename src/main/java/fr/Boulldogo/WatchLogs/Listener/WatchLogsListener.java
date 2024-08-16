@@ -4,11 +4,13 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.inventory.ItemStack;
 
 import fr.Boulldogo.WatchLogs.Main;
 import fr.Boulldogo.WatchLogs.Database.DatabaseManager;
 import fr.Boulldogo.WatchLogs.Events.JsonDataExportEvent;
 import fr.Boulldogo.WatchLogs.Events.JsonDataImportEvent;
+import fr.Boulldogo.WatchLogs.Events.TracedItemActionEvent;
 import fr.Boulldogo.WatchLogs.Events.WebsiteLoginEvent;
 import fr.Boulldogo.WatchLogs.Events.WebsiteLogoutEvent;
 import fr.Boulldogo.WatchLogs.Events.WebsiteLogsRequestEvent;
@@ -87,6 +89,20 @@ public class WatchLogsListener implements Listener {
 		
 		if(isLogEnable("website-register")) {
 			databaseManager.insertLog(username, "website-logs-search", "Unknow (Non-ingame event)", "Unknow (Non-ingame event)", "Register with ip adress " + ip + "  (Player is OP ? " + String.valueOf(isOp) + ")");
+		}
+	}
+	
+	@EventHandler
+	public void onTracedItemAction(TracedItemActionEvent e) {
+		Player player = e.getPlayer();
+		ItemStack stack = e.getItemStack();
+		String itemID = stack.getType().toString();
+		String UUID = e.getItemUUID();
+		int actionId = e.getActionId();
+		Location loc = e.getLocation();
+		
+		if(isLogEnable("trace-item-action")) {
+			databaseManager.insertLog(player.getName(), "trace-item-action", loc.getBlockX() + "/" + loc.getBlockY() + "/" + loc.getBlockZ(), player.getWorld().toString(), "Item : " + itemID + " | Item Trace UUID : " + UUID + " | Action ID : " + actionId);
 		}
 	}
 

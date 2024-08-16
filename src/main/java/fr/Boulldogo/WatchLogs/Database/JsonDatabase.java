@@ -48,7 +48,7 @@ public class JsonDatabase {
 	        JsonDataExportEvent exportEvent = new JsonDataExportEvent(player, "export-" + dateString + ".json", settings, lines == jsonExport.size() ? "all" : String.valueOf(lines));
 	        Bukkit.getServer().getPluginManager().callEvent(exportEvent);
 	        return true;
-	    } catch (IOException e) {
+	    } catch(IOException e) {
 	        e.printStackTrace();
 	        return false;
 	    }
@@ -56,27 +56,27 @@ public class JsonDatabase {
 	
 	public boolean importDatabaseDatas(Player player, String fileName, boolean useOriginalId) {
 	    File folder = new File(plugin.getDataFolder(), "import");
-	    if (!folder.exists()) {
+	    if(!folder.exists()) {
 	        folder.mkdir();
 	        return false;
 	    }
 
 	    File file = new File(folder, fileName + ".json");
 
-	    if (!file.exists()) {
+	    if(!file.exists()) {
 	        return false;
 	    }
 
-	    try (FileReader reader = new FileReader(file)) {
+	    try(FileReader reader = new FileReader(file)) {
 	        StringBuilder jsonContent = new StringBuilder();
 	        int i;
-	        while ((i = reader.read()) != -1) {
+	        while((i = reader.read()) != -1) {
 	            jsonContent.append((char) i);
 	        }
 
 	        JSONArray jsonArray = new JSONArray(jsonContent.toString());
 
-	        for (int j = 0; j < jsonArray.length(); j++) {
+	        for(int j = 0; j < jsonArray.length(); j++) {
 	            JSONObject jsonObject = jsonArray.getJSONObject(j);
 	            int id = jsonObject.getInt("id");
 	            String pseudo = jsonObject.getString("pseudo");
@@ -85,17 +85,18 @@ public class JsonDatabase {
 	            String world = jsonObject.getString("world");
 	            String result = jsonObject.getString("result");
 	            String timestamp = jsonObject.getString("timestamp");
+	            String serverName = jsonObject.getString("server");
 
-	            databaseManager.insertJsonLog(useOriginalId ? id : databaseManager.getLastLogId(), pseudo, action, location, world, result + " (Data imported by Json import)", timestamp, useOriginalId);
+	            databaseManager.insertJsonLog(useOriginalId ? id : databaseManager.getLastLogId(), pseudo, action, location, world, result + "(Data imported by Json import)", timestamp, useOriginalId, serverName);
 	        }
 	        
-	        String idMap = useOriginalId ? "Unavailable (use original IDs)" : databaseManager.getLastLogId() + " -> " + (databaseManager.getLastLogId() + jsonArray.length());
+	        String idMap = useOriginalId ? "Unavailable(use original IDs)" : databaseManager.getLastLogId() + " -> " +(databaseManager.getLastLogId() + jsonArray.length());
 	        
 	        JsonDataImportEvent importEvent = new JsonDataImportEvent(player, fileName + ".json", useOriginalId, idMap);
 	        Bukkit.getServer().getPluginManager().callEvent(importEvent);
 
 	        return true;
-	    } catch (IOException e) {
+	    } catch(IOException e) {
 	        e.printStackTrace();
 	        return false;
 	    }

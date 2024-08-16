@@ -374,6 +374,10 @@
                 <select id="action" name="action"></select>
             </div>
             <div class="form-group">
+                <label for="server">Server:</label>
+                <select id="server" name="server"></select>
+            </div>
+            <div class="form-group">
                 <label for="resultFilter">Result contains:</label>
                 <input type="text" id="resultFilter" name="resultFilter" placeholder="Example : GRASS, NETHERITE_SWORD, GOLDEN_APPLE, /wl tool, ...">
             </div>
@@ -417,6 +421,7 @@
             populateWorlds();
             populatePermissions();
 			refreshLimit();
+            populateServers();
         });
         
         const searchForm = document.getElementById('searchForm');
@@ -486,6 +491,7 @@
                         <div>⚒️ Action: ${logData.action}</div>
                         <div>📍 Location: ${logData.location}</div>
                         <div>🗺️ World: ${logData.world}</div>
+                        <div>💻 Server: ${logData.server}</div>
                         <div>📜 Result: ${logData.result}</div>
                         <div>🕰️ Timestamp: ${logData.timestamp}</div>
                     `;
@@ -577,6 +583,40 @@
                 })
                 .catch(error => {
                     console.error('Error fetching actions:', error);
+                });
+        }
+
+        function populateServers() {
+            fetch('/logs/server_list')
+                .then(response => response.json())
+                .then(servers => {
+                    const serverSelect = document.getElementById('server');
+                    servers.forEach(server => {
+                        const option = document.createElement('option');
+                        option.value = server;
+                        option.text = server;
+                        serverSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching servers:', error);
+                });
+        }
+
+        function mutliServerEnable() {
+            fetch('/logs/multi_server_enable')
+                .then(response => response.json())
+                .then(enable => {
+                    const searchForm = document.getElementById('server');
+                    if (!enable.enable) {
+                        searchForm.classList.add('disabled');
+                        searchForm.querySelectorAll('input, select, button').forEach(element => {
+                            element.setAttribute('disabled', 'disabled');
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching multi server:', error);
                 });
         }
         

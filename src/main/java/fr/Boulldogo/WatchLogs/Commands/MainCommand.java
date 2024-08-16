@@ -4,7 +4,9 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -13,11 +15,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -29,6 +33,7 @@ import fr.Boulldogo.WatchLogs.Database.JsonDatabase;
 import fr.Boulldogo.WatchLogs.Listener.ToolListener;
 import fr.Boulldogo.WatchLogs.Utils.ActionUtils;
 import fr.Boulldogo.WatchLogs.Utils.PlayerSession;
+import fr.Boulldogo.WatchLogs.Utils.TraceItemUtils;
 import fr.Boulldogo.WatchLogs.Utils.WebUtils;
 
 public class MainCommand implements CommandExecutor, TabCompleter{
@@ -48,12 +53,12 @@ public class MainCommand implements CommandExecutor, TabCompleter{
     @Override
     public boolean onCommand(CommandSender sender, Command arg1, String arg2, String[] args) {
         String prefix = plugin.getConfig().getBoolean("use-prefix") ? translateString(plugin.getConfig().getString("prefix")) : "";
-        if(!(sender instanceof Player)) {
-            plugin.getLogger().info("Only online players can use WatchLogs (/wl) commands!");
+        if(!(sender instanceof Player) || !(sender instanceof Player) && !(args.length >= 2 && args[0].equals("traceitem") && args[1].equals("give"))) {
+            plugin.getLogger().info("Only online players can use WatchLogs(/wl) commands!");
             return true;
         }
         
-        Player player = (Player) sender;
+        Player player =(Player) sender;
         
         if(args.length < 1) {
             player.sendMessage(translateString(plugin.getLang().getString("messages.unknown-subcommand")));
@@ -252,7 +257,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             		return true;
             	} else {
                     StringBuilder code = new StringBuilder(12);
-                    for (int i = 0; i < 12; i++) {
+                    for(int i = 0; i < 12; i++) {
                     	String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
                         int index = random.nextInt(CHARACTERS.length());
                         code.append(CHARACTERS.charAt(index));
@@ -297,6 +302,264 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             }
             
             player.sendMessage(prefix + databaseManager.getDatabaseInfo());
+        } else if(subCommand.equals("traceitem")) {
+            if(sender instanceof Player && !player.hasPermission("watchlogs.traceitem")) {
+                player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.have-not-permission")));
+                return true;
+            }
+            
+        	if(args.length < 2) {
+                sender.sendMessage(prefix + translateString(plugin.getLang().getString("messages.usage-traceitem")));
+                return true;
+        	}
+        	
+        	if(!plugin.getConfig().getBoolean("trace-item.enable")) {
+                sender.sendMessage(prefix + translateString(plugin.getLang().getString("messages.trace-item-not-enable")));
+                return true;
+        	}
+        	
+        	String cmd = args[1];
+        	
+        	if(!cmd.equals("search") && !cmd.equals("give") && !cmd.equals("settrace") && !cmd.equals("removetrace") && !cmd.equals("check")) {
+                sender.sendMessage(prefix + translateString(plugin.getLang().getString("messages.usage-traceitem")));
+                return true;
+        	}
+        	
+        	if(cmd.equals("search")) {
+        		if(args.length == 2) {
+            		ItemStack stack = player.getItemInHand();
+            		
+            		if(stack == null || stack.getType() == Material.AIR) {
+            			player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.must-have-item-in-hand-search")));
+            			return true;
+            		}
+            		
+            		TraceItemUtils tiu = plugin.getTraceItemUtils();
+            		
+            		if(!tiu.hasTag(stack)) {
+            			player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.item-not-traced")));
+            			return true;
+            		}
+            		
+            		String UUID = tiu.getWltiTagValue(stack);
+            		
+            		if(!databaseManager.UUIDExists(UUID)) {
+            			player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.error-traceitem-db")));
+            			return true;
+            		}
+            		
+            		player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.trace-item-header").replace("%u", UUID)));
+            		
+            		try {
+    					player.sendMessage(prefix + translateString(ChatColor.YELLOW + databaseManager.getActionString(UUID)));
+    					return true;
+    				} catch(SQLException e) {
+    					e.printStackTrace();
+    					player.sendMessage(prefix + translateString(plugin.getLang().getString("&4An error occured when trying to connect with database !")));
+    					return true;
+    				}
+        		} else if(args.length > 2) {
+            		String UUID = args[2];
+               		
+            		if(!databaseManager.UUIDExists(UUID)) {
+            			player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.error-traceitem-db")));
+            			return true;
+            		}
+            		
+            		player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.trace-item-header").replace("%u", UUID)));
+            		
+            		try {
+    					player.sendMessage(prefix + translateString(ChatColor.YELLOW + databaseManager.getActionString(UUID)));
+    					return true;
+    				} catch(SQLException e) {
+    					e.printStackTrace();
+    					player.sendMessage(prefix + translateString(plugin.getLang().getString("&4An error occured when trying to connect with database !")));
+    					return true;
+    				}
+        		}
+        	} else if(cmd.equals("give")) {
+        	    String settings = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
+
+        	    String[] arguments = settings.split("\\s+");
+
+        	    String name = "undefined";
+        	    String item = "undefined";
+        	    OfflinePlayer pl = null;
+        	    List<String> lore = new ArrayList<>();
+        	    Map<Enchantment, Integer> enchantments = new HashMap<>();
+
+        	    for(String argument : arguments) {
+        	        if(argument.startsWith("name:")) {
+        	            name = argument.substring(5);
+        	        } else if(argument.startsWith("item:")) {
+        	            item = argument.substring(5);
+        	        } else if(argument.startsWith("player:")) {
+        	            OfflinePlayer p = Bukkit.getOfflinePlayer(argument.substring(7));
+
+        	            if(p == null) {
+        	                sender.sendMessage(prefix + ChatColor.RED + "Unknown player!");
+        	                return true;
+        	            }
+
+        	            pl = p;
+        	        } else if(argument.startsWith("lore:")) {
+        	            String loreText = argument.substring(5);
+        	            String[] loreParts = loreText.split("\\|"); 
+        	            for(String loreLine : loreParts) {
+        	                lore.add(translateString(loreLine));
+        	            }
+        	        } else if(argument.startsWith("enchants:")) {
+        	            String[] enchantPairs = argument.substring(9).split(",");
+        	            for(String pair : enchantPairs) {
+        	                String[] enchantInfo = pair.split(":");
+        	                if(enchantInfo.length == 2) {
+        	                    try {
+        	                        Enchantment enchantment = getEnchantmentByName(enchantInfo[0].toLowerCase());
+        	                        int level = Integer.parseInt(enchantInfo[1]);
+        	                        if(enchantment != null) {
+        	                            enchantments.put(enchantment, level);
+        	                        } else {
+        	                            sender.sendMessage(prefix + ChatColor.RED + "Invalid enchantment: " + enchantInfo[0]);
+        	                            return true;
+        	                        }
+        	                    } catch(NumberFormatException e) {
+        	                        sender.sendMessage(prefix + ChatColor.RED + "Invalid enchantment level: " + enchantInfo[1]);
+        	                        return true;
+        	                    }
+        	                } else {
+        	                    sender.sendMessage(prefix + ChatColor.RED + "Invalid enchantment format: " + pair);
+        	                    return true;
+        	                }
+        	            }
+        	        } else {
+        	            sender.sendMessage(prefix + "Invalid argument: " + argument);
+        	            return true;
+        	        }
+        	    }
+
+        	    if(!(sender instanceof Player) && pl == null) {
+        	        sender.sendMessage(prefix + "Console sender must specify a valid player in the command!");
+        	        return true;
+        	    } else if(sender instanceof Player && pl == null) {
+        	        pl = (Player) sender;
+        	    }
+
+        	    if(!pl.isOnline()) {
+        	        sender.sendMessage(prefix + "The target player must be online to receive the item!");
+        	        return true;
+        	    }
+
+        	    Material material = Material.getMaterial(item.toUpperCase());
+        	    if(material == null) {
+        	        sender.sendMessage(prefix + "Please give a valid item !");
+        	        return true;
+        	    }
+
+        	    boolean isFullInventory = true;
+        	    int slot = -1;
+
+        	    for(int i = 0; i < 36; i++) {
+        	        if(pl.getPlayer().getInventory().getItem(i) == null || pl.getPlayer().getInventory().getItem(i).getType() == Material.AIR) {
+        	            isFullInventory = false;
+        	            slot = i;
+        	            break;
+        	        }
+        	    }
+
+        	    if(isFullInventory || slot == -1) {
+        	        sender.sendMessage(prefix + "The target player's inventory is full!");
+        	        return true;
+        	    }
+
+        	    ItemStack stack = new ItemStack(material);
+
+        	    for(Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
+        	        stack.addUnsafeEnchantment(entry.getKey(), entry.getValue());
+        	    }
+
+        	    ItemMeta meta = stack.getItemMeta();
+
+        	    if(!name.equals("undefined")) {
+        	        meta.setDisplayName(translateString(name));
+        	    }
+
+        	    if(!lore.isEmpty()) {
+        	        meta.setLore(lore);
+        	    }
+
+        	    stack.setItemMeta(meta);
+
+        	    TraceItemUtils tiu = plugin.getTraceItemUtils();
+        	    String UUID = tiu.createUUIDForItem();
+
+        	    ItemStack finalStack = tiu.setTagToItemStack(stack, UUID);
+
+        	    pl.getPlayer().getInventory().setItem(slot, finalStack);
+        	    sender.sendMessage(prefix + ChatColor.GREEN + "Item correctly given!");
+        	    return true;
+        	} else if(cmd.equals("settrace")) {
+        		ItemStack item = player.getItemInHand();
+        		
+        		if(item == null || item.getType() == Material.AIR) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.must-have-item-in-hand")));
+                    return true;
+        		}
+        		
+        		TraceItemUtils tiu = plugin.getTraceItemUtils();
+        		
+        		if(tiu.hasTag(item)) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.item-already-traced")));
+                    return true;
+        		}
+        		
+        		String UUID = tiu.createUUIDForItem();
+        		
+        		int slot = player.getInventory().getHeldItemSlot();
+        		
+        		ItemStack stack = tiu.setTagToItemStack(item, UUID);
+        		player.getInventory().setItem(slot, stack);
+                player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.item-correctly-traced")));
+                return true;	
+        	} else if(cmd.equals("removetrace")) {
+        		ItemStack item = player.getItemInHand();
+        		
+        		if(item == null || item.getType() == Material.AIR) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.must-have-item-in-hand")));
+                    return true;
+        		}
+        		
+        		TraceItemUtils tiu = plugin.getTraceItemUtils();
+        		
+        		if(!tiu.hasTag(item)) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.item-not-traced")));
+                    return true;
+        		}
+        		
+        		int slot = player.getInventory().getHeldItemSlot();
+        		
+        		ItemStack stack = tiu.removeTagOnItemStack(item);
+        		player.getInventory().setItem(slot, stack);
+                player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.trace-correctly-removed")));
+                return true;	
+        	} else if(cmd.equals("check")) {
+        		ItemStack item = player.getItemInHand();
+        		
+        		if(item == null || item.getType() == Material.AIR) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.must-have-item-in-hand")));
+                    return true;
+        		}
+        		
+        		TraceItemUtils tiu = plugin.getTraceItemUtils();
+        		
+        		if(!tiu.hasTag(item)) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.item-not-traced")));
+                    return true;
+        		}
+        		
+        		String UUID = tiu.getWltiTagValue(item);
+                player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.trace-item-uuid").replace("%uuid", UUID)));
+                return true;
+        	}
         } else if(subCommand.equals("export")) {
             if(!player.hasPermission("watchlogs.export")) {
                 player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.have-not-permission")));
@@ -352,7 +615,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                                 return true;
                             }
                             useRayon = true;
-                        } catch (NumberFormatException e) {
+                        } catch(NumberFormatException e) {
                             player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.invalid-radius")));
                             return true;
                         }
@@ -385,7 +648,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             	List<String> jsonList = new ArrayList<>();
 				try {
 					jsonList = databaseManager.getAllLogs(false, true);
-				} catch (SQLException e) {
+				} catch(SQLException e) {
 					e.printStackTrace();
 				}
             	
@@ -457,7 +720,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                     session.setCurrentPage(page);
                     this.showPage(session.getCurrentLogs(), page, player, limit);
                 }
-            } catch (NumberFormatException e) {
+            } catch(NumberFormatException e) {
                 player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.invalid-page-number")));
             }
         } else if(subCommand.equals("tpto")) {
@@ -527,6 +790,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             boolean useTimestamp = false;
             boolean useRayon = false;
             int limit = 100;
+            String server = "undefined";
 
             for(String argument : arguments) {
                 if(argument.startsWith("p:")) {
@@ -543,7 +807,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                             return true;
                         }
                         useRayon = true;
-                    } catch (NumberFormatException e) {
+                    } catch(NumberFormatException e) {
                         player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.invalid-radius")));
                         return true;
                     }
@@ -567,6 +831,19 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                         player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.invalid-limit-format")));
                         return true;
                 	}
+                } else if(argument.startsWith("s:")) {
+            	    String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.server-name") : "undefined";
+            	    if(serverName.equals("undefined")) {
+            	    	player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.multi-server-disable")));
+            	    	return true;
+            	    }
+            	    
+            	    if(!plugin.getConfig().getBoolean("multi-server.enable-log-research-in-multiserver")) {
+            	    	player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.multi-server-disable")));
+            	    	return true;
+            	    }
+            	    
+            	    server = argument.substring(2);
                 } else {
                     player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.invalid-argument")) + argument);
                     return true;
@@ -581,7 +858,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             List<String> searchResult = databaseManager.getLogs(
                 worldSearch, playerSearch, useRayon,
                 location.getBlockX(), location.getBlockY(), location.getBlockZ(),
-                radiusSearch, actionSearch, filterSearch, timeFilter, useTimestamp, limit
+                radiusSearch, actionSearch, filterSearch, timeFilter, useTimestamp, limit, server
             );
             session.setCurrentLogs(searchResult);
 
@@ -600,7 +877,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
         List<String> completions = new ArrayList<>();
 
         if(args.length == 1) {
-            List<String> subCommands = Arrays.asList("help", "tool", "database", "page", "tpto", "reload", "search", "import", "export", "giveitem", "gdeath", "website");
+            List<String> subCommands = Arrays.asList("help", "tool", "database", "page", "tpto", "reload", "search", "import", "export", "giveitem", "gdeath", "website", "traceitem");
             String currentArg = args[0].toLowerCase();
             completions = subCommands.stream()
                 .filter(subCommand -> subCommand.startsWith(currentArg))
@@ -610,10 +887,13 @@ public class MainCommand implements CommandExecutor, TabCompleter{
 
         if(args.length > 1) {
             String subCommand = args[0].toLowerCase();
-            switch (subCommand) {
+            switch(subCommand) {
                 case "search":
                     completions = handleSearchTabCompletion(args);
                     break;
+                case "traceitem":
+                	completions = handleTraceitemTabCompletion(args);
+                	break;
                 case "import":
                     completions = handleImportTabCompletion(args);
                     break;
@@ -638,7 +918,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
         List<String> completions = new ArrayList<>();
         List<String> usedParams = Arrays.asList(args).subList(1, args.length - 1);
 
-        List<String> searchParams = new ArrayList<>(Arrays.asList("p:", "w:", "a:", "r:", "f:", "t:", ":l"));
+        List<String> searchParams = new ArrayList<>(Arrays.asList("p:", "w:", "a:", "r:", "f:", "t:", ":l", "s:"));
         searchParams.removeIf(param -> usedParams.stream().anyMatch(arg -> arg.startsWith(param)));
 
         String currentArg = args[args.length - 1].toLowerCase();
@@ -664,7 +944,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                     .mapToObj(i -> "r:" + i)
                     .filter(r -> r.startsWith(currentArg))
                     .collect(Collectors.toList());
-            } catch (NumberFormatException e) {
+            } catch(NumberFormatException e) {
                 completions.add("r:1");
             }
         } else if(currentArg.startsWith("w:")) {
@@ -674,6 +954,17 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                 .filter(name -> name.toLowerCase().startsWith(worldArg))
                 .map(name -> "w:" + name)
                 .collect(Collectors.toList());
+        } else if(currentArg.startsWith("s:")) {
+        	if(plugin.getConfig().getBoolean("multi-server.enable")) {
+        		if(plugin.getConfig().getBoolean("multi-server.enable-log-research-in-multiserver")) {
+                	List<String> servers = databaseManager.getServerInNetwork();
+                    String serverArg = currentArg.substring(2);
+                    completions = servers.stream()
+                        .filter(server -> server.startsWith(serverArg))
+                        .map(server -> "s:" + server)
+                        .collect(Collectors.toList());
+        		}
+        	}
         } else {
             completions = searchParams.stream()
                 .filter(param -> param.startsWith(currentArg))
@@ -683,6 +974,46 @@ public class MainCommand implements CommandExecutor, TabCompleter{
 
         return completions;
     }
+    
+    private List<String> handleTraceitemTabCompletion(String[] args) {
+        List<String> completions = new ArrayList<>();
+        
+        if(args.length == 2) {
+        	completions = Arrays.asList("search", "give", "settrace", "removetrace", "check");
+        }
+        
+        if(args.length >= 2 && args[1].equals("give")) {
+            List<String> usedParams = Arrays.asList(args).subList(2, args.length - 1);
+            List<String> traceParams = new ArrayList<>(Arrays.asList("name:", "lore:", "enchants:", "player:", "item:"));
+            traceParams.removeIf(param -> usedParams.stream().anyMatch(arg -> arg.startsWith(param)));
+
+            String currentArg = args[args.length - 1].toLowerCase();
+
+            if(currentArg.startsWith("enchants:")) {
+                List<String> enchantments = getEnchantsAvaible();
+                String enchArg = currentArg.substring(2);
+                completions = enchantments.stream()
+                    .filter(enchant -> enchant.startsWith(enchArg))
+                    .map(enchant -> "enchants:" + enchant)
+                    .collect(Collectors.toList());
+            } else if(currentArg.startsWith("player:")) {
+                String playerArg = currentArg.substring(2);
+                completions = Bukkit.getOnlinePlayers().stream()
+                    .map(Player::getName)
+                    .filter(name -> name.toLowerCase().startsWith(playerArg))
+                    .map(name -> "player:" + name)
+                    .collect(Collectors.toList());
+            } else {
+                completions = traceParams.stream()
+                    .filter(param -> param.startsWith(currentArg))
+                    .sorted()
+                    .collect(Collectors.toList());
+            }
+        }
+
+        return completions;
+    }
+
 
     private List<String> handleExportTabCompletion(String[] args) {
         List<String> completions = new ArrayList<>();
@@ -714,7 +1045,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                     .mapToObj(i -> "r:" + i)
                     .filter(r -> r.startsWith(currentArg))
                     .collect(Collectors.toList());
-            } catch (NumberFormatException e) {
+            } catch(NumberFormatException e) {
                 completions.add("r:1");
             }
         } else if(currentArg.startsWith("w:")) {
@@ -765,18 +1096,18 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.no-matching-entries")));
         } else {
             int entries = plugin.getConfig().getInt("max-entries");
-            int totalPage = (searchResult.size() + (entries - 1)) / entries;
+            int totalPage =(searchResult.size() +(entries - 1)) / entries;
             if(page <= totalPage) {
                 player.sendMessage(""); 
                 player.sendMessage(prefix + String.format(translateString(plugin.getLang().getString("messages.logs-found")), page, totalPage, limit)); 
                 player.sendMessage("");
-                int startIndex = (page - 1) * entries;
+                int startIndex =(page - 1) * entries;
                 int endIndex = Math.min(startIndex + entries, searchResult.size()); 
                 for(int i = startIndex; i < endIndex; i++) {
                     player.sendMessage(searchResult.get(i));
                 }
                 if(page < totalPage) {
-                    player.sendMessage(translateString(plugin.getLang().getString("messages.next-page")) + (page + 1));
+                    player.sendMessage(translateString(plugin.getLang().getString("messages.next-page")) +(page + 1));
                 }
             } else {
                 player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.page-number-exceeds")));
@@ -801,7 +1132,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
         try {
             Integer.parseInt(str);
             return true;
-        } catch (NumberFormatException e) {
+        } catch(NumberFormatException e) {
             return false;
         }
     }
@@ -829,6 +1160,49 @@ public class MainCommand implements CommandExecutor, TabCompleter{
 
         player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.item-death-correctly-given")));
     }
+    
+    private Enchantment getEnchantmentByName(String name) {
+        switch(name.toLowerCase()) {
+            case "sharpness":
+                return Enchantment.DAMAGE_ALL;
+            case "unbreaking":
+                return Enchantment.DURABILITY;
+            case "protection":
+                return Enchantment.PROTECTION_ENVIRONMENTAL;
+            case "fire_aspect":
+                return Enchantment.FIRE_ASPECT;
+            case "efficiency":
+                return Enchantment.DIG_SPEED;
+            case "fortune":
+                return Enchantment.LOOT_BONUS_BLOCKS;
+            case "looting":
+                return Enchantment.LOOT_BONUS_MOBS;
+            case "power":
+                return Enchantment.ARROW_DAMAGE;
+            case "punch":
+                return Enchantment.ARROW_KNOCKBACK;
+            case "infinity":
+                return Enchantment.ARROW_INFINITE;
+            case "flame":
+                return Enchantment.ARROW_FIRE;
+            case "knockback":
+                return Enchantment.KNOCKBACK;
+            case "respiration":
+                return Enchantment.OXYGEN;
+            case "aqua_affinity":
+                return Enchantment.WATER_WORKER;
+            case "mending":
+            	return Enchantment.MENDING;
+            default:
+                return null;
+        }
+    }
+    
+    private List<String> getEnchantsAvaible() {
+    	return Arrays.asList("sharpness", "unbreaking", "protection", "fire_aspect", "efficiency", "fortune", "looting",
+    			"power", "punch", "infinity", "knockback", "respiration", "aqua_affinity", "mending");
+    }
+
 
     public boolean isValidSubcommand(String s) {
         return s.equals("help")
@@ -839,6 +1213,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             || s.equals("reload")
             || s.equals("export")
             || s.equals("import")
+            || s.equals("traceitem")
             || s.equals("gdeath")
             || s.equals("search")
             || s.equals("website")

@@ -1,7 +1,9 @@
 package fr.Boulldogo.WatchLogs.Listener;
 
+import java.sql.SQLException;
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -36,8 +38,10 @@ import org.bukkit.event.inventory.InventoryType;
 
 import fr.Boulldogo.WatchLogs.Main;
 import fr.Boulldogo.WatchLogs.Database.DatabaseManager;
+import fr.Boulldogo.WatchLogs.Events.TracedItemActionEvent;
 import fr.Boulldogo.WatchLogs.Utils.ItemDataSerializer;
 import fr.Boulldogo.WatchLogs.Utils.MaterialUtils;
+import fr.Boulldogo.WatchLogs.Utils.TraceItemUtils;
 import net.md_5.bungee.api.ChatColor;
 
 @SuppressWarnings("deprecation")
@@ -47,12 +51,14 @@ public class MinecraftListener implements Listener {
 	public DatabaseManager databaseManager;
 	public MaterialUtils materialUtils;
 	public ItemDataSerializer dataSerializer;
+	private TraceItemUtils tiu;
 	
 	public MinecraftListener(Main plugin, DatabaseManager databaseManager, MaterialUtils materialUtils, ItemDataSerializer dataSerializer) {
 		this.plugin = plugin;
 		this.databaseManager = databaseManager;
 		this.materialUtils = materialUtils;
 		this.dataSerializer = dataSerializer;
+		this.tiu = plugin.getTraceItemUtils();
 	}
 	
 	@EventHandler
@@ -120,7 +126,7 @@ public class MinecraftListener implements Listener {
 	    Player player =(Player) e.getPlayer();
 	    if(isContainer(inventory) && !databaseManager.isToolEnabled(player.getName())) {
 	        if(isLogEnable("container-open")) {
-	            Location location = e.getInventory().getLocation();
+	            Location location = e.getPlayer().getLocation();
 	            String inventoryType = getContainerName(inventory.getType());
 	            String inventoryName = e.getView().getTitle();
 	            databaseManager.insertLog(player.getName(), "container-open", (location == null ? "Unknow" : location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ()), player.getWorld().getName(), "Container: " + inventoryType + " | Container Name : " + inventoryName);
@@ -197,6 +203,26 @@ public class MinecraftListener implements Listener {
 	        if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
 	        	databaseManager.addItemEntry(dataSerializer.serializeItemStack(item), false, -1);
 	        }
+	    }    
+	    
+	    if(plugin.getConfig().getBoolean("trace-item.enable")) {
+	    	if(tiu.hasTag(item)) {
+	    		String UUID = tiu.getWltiTagValue(item);
+	    		String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.servername") : "Unknow (Multi Server Disable)";
+	    		TracedItemActionEvent event = new TracedItemActionEvent(player, item, UUID, serverName, databaseManager.getLastLogId(), location);
+	    		Bukkit.getServer().getPluginManager().callEvent(event);
+	    		if(databaseManager.UUIDExists(UUID)) {
+	    			String logString = "";
+					try {
+						logString = databaseManager.getActionString(UUID);
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+	    			databaseManager.setItemStringLog(UUID, logString + "," + databaseManager.getLastLogId());
+	    		} else {
+	    			databaseManager.registerFirstItemLog(UUID, databaseManager.getLastLogId());
+	    		}
+	    	}
 	    }
 	}
 
@@ -228,25 +254,47 @@ public class MinecraftListener implements Listener {
     public void ItemDropEvent(PlayerDropItemEvent e) {
 		if(e.isCancelled()) return;
 		Player player = e.getPlayer();
-		String id = materialUtils.getItemName(e.getItemDrop().getItemStack());
+		ItemStack item = e.getItemDrop().getItemStack();
+		String id = materialUtils.getItemName(item);
+		Location location = e.getItemDrop().getLocation();
 		if(isLogEnable("item-drop") && materialUtils.isItemActivated(id)) {
-			Location location = e.getItemDrop().getLocation();
 			int data = getItemData(e.getItemDrop().getItemStack());
 			databaseManager.insertLog(player.getName(), "item-drop", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Item: " + id +(data != 0 ? ":" +  data : ""));
 			
 	        if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
 	        	databaseManager.addItemEntry(dataSerializer.serializeItemStack(e.getItemDrop().getItemStack()), false, -1);
 	        }
-		}	
+		}		
+	    
+	    if(plugin.getConfig().getBoolean("trace-item.enable")) {
+	    	if(tiu.hasTag(item)) {
+	    		String UUID = tiu.getWltiTagValue(item);
+	    		String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.servername") : "Unknow (Multi Server Disable)";
+	    		TracedItemActionEvent event = new TracedItemActionEvent(player, item, UUID, serverName, databaseManager.getLastLogId(), location);
+	    		Bukkit.getServer().getPluginManager().callEvent(event);
+	    		if(databaseManager.UUIDExists(UUID)) {
+	    			String logString = "";
+					try {
+						logString = databaseManager.getActionString(UUID);
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+	    			databaseManager.setItemStringLog(UUID, logString + "," + databaseManager.getLastLogId());
+	    		} else {
+	    			databaseManager.registerFirstItemLog(UUID, databaseManager.getLastLogId());
+	    		}
+	    	}
+	    }
     }
     
     @EventHandler
     public void ItemPickupEvent(PlayerPickupItemEvent e) {
 		if(e.isCancelled()) return;
 		Player player = e.getPlayer();
-		String id = materialUtils.getItemName(e.getItem().getItemStack());
+		ItemStack item = e.getItem().getItemStack();
+		String id = materialUtils.getItemName(item);
+		Location location = e.getItem().getLocation();
 		if(isLogEnable("item-pickup") && materialUtils.isItemActivated(id)) {
-			Location location = e.getItem().getLocation();
 			int data = getItemData(e.getItem().getItemStack());
 			databaseManager.insertLog(player.getName(), "item-pickup", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Item: " + id +(data != 0 ? ":" +  data : ""));
 			
@@ -254,14 +302,35 @@ public class MinecraftListener implements Listener {
 	        	databaseManager.addItemEntry(dataSerializer.serializeItemStack(e.getItem().getItemStack()), false, -1);
 	        }
 		}
+		
+	    if(plugin.getConfig().getBoolean("trace-item.enable")) {
+	    	if(tiu.hasTag(item)) {
+	    		String UUID = tiu.getWltiTagValue(item);
+	    		String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.servername") : "Unknow (Multi Server Disable)";
+	    		TracedItemActionEvent event = new TracedItemActionEvent(player, item, UUID, serverName, databaseManager.getLastLogId(), location);
+	    		Bukkit.getServer().getPluginManager().callEvent(event);
+	    		if(databaseManager.UUIDExists(UUID)) {
+	    			String logString = "";
+					try {
+						logString = databaseManager.getActionString(UUID);
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+	    			databaseManager.setItemStringLog(UUID, logString + "," + databaseManager.getLastLogId());
+	    		} else {
+	    			databaseManager.registerFirstItemLog(UUID, databaseManager.getLastLogId());
+	    		}
+	    	}
+	    }
     }
     
     @EventHandler
     public void onItemBreak(PlayerItemBreakEvent e) {
 		Player player = e.getPlayer();
 		String id = materialUtils.getItemName(e.getBrokenItem());
+		ItemStack item = e.getBrokenItem();
+		Location location = e.getPlayer().getLocation();
 		if(isLogEnable("item-break") && materialUtils.isItemActivated(id)) {
-			Location location = e.getPlayer().getLocation();
 			int data = getItemData(e.getBrokenItem());
 			databaseManager.insertLog(player.getName(), "item-break", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Item: " + id +(data != 0 ? ":" +  data : ""));
 			
@@ -269,13 +338,33 @@ public class MinecraftListener implements Listener {
 	        	databaseManager.addItemEntry(dataSerializer.serializeItemStack(e.getBrokenItem()), false, -1);
 	        }
 		}	
+		
+	    if(plugin.getConfig().getBoolean("trace-item.enable")) {
+	    	if(tiu.hasTag(item)) {
+	    		String UUID = tiu.getWltiTagValue(item);
+	    		String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.servername") : "Unknow (Multi Server Disable)";
+	    		TracedItemActionEvent event = new TracedItemActionEvent(player, item, UUID, serverName, databaseManager.getLastLogId(), location);
+	    		Bukkit.getServer().getPluginManager().callEvent(event);
+	    		if(databaseManager.UUIDExists(UUID)) {
+	    			String logString = "";
+					try {
+						logString = databaseManager.getActionString(UUID);
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+	    			databaseManager.setItemStringLog(UUID, logString + "," + databaseManager.getLastLogId());
+	    		} else {
+	    			databaseManager.registerFirstItemLog(UUID, databaseManager.getLastLogId());
+	    		}
+	    	}
+	    }
     }
     
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent e) {
 		Player player = e.getEntity();
+		Location location = e.getEntity().getLocation();
 		if(isLogEnable("player-death")) {
-			Location location = player.getLocation();
 			databaseManager.insertLog(player.getName(), "player-death", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Death type: " + e.getDeathMessage());
 		}	
 
@@ -287,13 +376,37 @@ public class MinecraftListener implements Listener {
 			        	databaseManager.addItemEntry(dataSerializer.serializeItemStack(e.getDrops().get(i)), true, deathId);
 			        }
 			        boolean rebornSystem = plugin.getConfig().getBoolean("use-item-reborn-system");
-					Location location = e.getEntity().getLocation();
 					String id = e.getDrops().get(i).getType().toString();
 					if(materialUtils.isItemActivated(id)) {
 						int data = getItemData(e.getDrops().get(i));
 						databaseManager.insertLog(player.getName(), "player-death-loot", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Item: " + id +(data != 0 ? ":" +  data : "") + (rebornSystem ? " | Death ID : " + deathId : ""));	
 					}
 				}
+			}
+		}
+		
+		if(!e.getDrops().isEmpty()) {
+			for(int i = 0; i < e.getDrops().size(); i++) {
+				ItemStack item = e.getDrops().get(i);
+			    if(plugin.getConfig().getBoolean("trace-item.enable")) {
+			    	if(tiu.hasTag(item)) {
+			    		String UUID = tiu.getWltiTagValue(item);
+			    		String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.servername") : "Unknow (Multi Server Disable)";
+			    		TracedItemActionEvent event = new TracedItemActionEvent(player, item, UUID, serverName, databaseManager.getLastLogId(), location);
+			    		Bukkit.getServer().getPluginManager().callEvent(event);
+			    		if(databaseManager.UUIDExists(UUID)) {
+			    			String logString = "";
+							try {
+								logString = databaseManager.getActionString(UUID);
+							} catch (SQLException e1) {
+								e1.printStackTrace();
+							}
+			    			databaseManager.setItemStringLog(UUID, logString + "," + databaseManager.getLastLogId());
+			    		} else {
+			    			databaseManager.registerFirstItemLog(UUID, databaseManager.getLastLogId());
+			    		}
+			    	}
+			    }
 			}
 		}
     }
@@ -346,13 +459,66 @@ public class MinecraftListener implements Listener {
              }
          }
         
-        if(stack != null && block == null) {
-            if(isLogEnable("interact-item") && materialUtils.isItemActivated(materialUtils.getItemName(stack))) {
-                Location location2 = player.getLocation();
-    			String id = materialUtils.getItemName(stack);
-                int data = getItemData(stack);
-                databaseManager.insertLog(player.getName(), "interact-item", location2.getBlockX() + "/" + location2.getBlockY() + "/" + location2.getBlockZ(), player.getWorld().getName(), "Item: " + id +(data != 0 ? ":" +  data : ""));
-            }
+        if(stack != null) {
+        	if(action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK || action == Action.RIGHT_CLICK_BLOCK || action == Action.LEFT_CLICK_BLOCK) {
+                if(isLogEnable("interact-item") && materialUtils.isItemActivated(materialUtils.getItemName(stack))) {
+                    Location location2 = player.getLocation();
+        			String id = materialUtils.getItemName(stack);
+                    int data = getItemData(stack);
+                    databaseManager.insertLog(player.getName(), "interact-item", location2.getBlockX() + "/" + location2.getBlockY() + "/" + location2.getBlockZ(), player.getWorld().getName(), "Item: " + id +(data != 0 ? ":" +  data : ""));
+                }
+                
+        	    if(plugin.getConfig().getBoolean("trace-item.enable")) {
+        	    	if(tiu.hasTag(stack)) {
+        	    		String UUID = tiu.getWltiTagValue(stack);
+        	    		String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.servername") : "Unknow (Multi Server Disable)";
+        	    		TracedItemActionEvent event = new TracedItemActionEvent(player, stack, UUID, serverName, databaseManager.getLastLogId(), location);
+        	    		Bukkit.getServer().getPluginManager().callEvent(event);
+        	    		if(databaseManager.UUIDExists(UUID)) {
+        	    			String logString = "";
+        					try {
+        						logString = databaseManager.getActionString(UUID);
+        					} catch (SQLException e1) {
+        						e1.printStackTrace();
+        					}
+        	    			databaseManager.setItemStringLog(UUID, logString + "," + databaseManager.getLastLogId());
+        	    		} else {
+        	    			databaseManager.registerFirstItemLog(UUID, databaseManager.getLastLogId());
+        	    		}
+        	    	}
+        	    }
+        	}
+        }
+        
+        if(action == Action.LEFT_CLICK_AIR) {
+        	if(stack != null) {
+                if(isLogEnable("interact-item") && materialUtils.isItemActivated(materialUtils.getItemName(stack))) {
+                    Location location2 = player.getLocation();
+        			String id = materialUtils.getItemName(stack);
+                    int data = getItemData(stack);
+                    databaseManager.insertLog(player.getName(), "interact-item", location2.getBlockX() + "/" + location2.getBlockY() + "/" + location2.getBlockZ(), player.getWorld().getName(), "Item: " + id +(data != 0 ? ":" +  data : ""));
+                }
+                
+        	    if(plugin.getConfig().getBoolean("trace-item.enable")) {
+        	    	if(tiu.hasTag(stack)) {
+        	    		String UUID = tiu.getWltiTagValue(stack);
+        	    		String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.servername") : "Unknow (Multi Server Disable)";
+        	    		TracedItemActionEvent event = new TracedItemActionEvent(player, stack, UUID, serverName, databaseManager.getLastLogId(), location);
+        	    		Bukkit.getServer().getPluginManager().callEvent(event);
+        	    		if(databaseManager.UUIDExists(UUID)) {
+        	    			String logString = "";
+        					try {
+        						logString = databaseManager.getActionString(UUID);
+        					} catch (SQLException e1) {
+        						e1.printStackTrace();
+        					}
+        	    			databaseManager.setItemStringLog(UUID, logString + "," + databaseManager.getLastLogId());
+        	    		} else {
+        	    			databaseManager.registerFirstItemLog(UUID, databaseManager.getLastLogId());
+        	    		}
+        	    	}
+        	    }
+        	}
         }
     }
     

@@ -98,6 +98,7 @@ enable-logs:
   website-logout: true
   website-logs-search: true
   website-register: true
+  trace-item-action: true
   
 #[EN] Modify settings of the website. [FR] Modifiez les paramètres du site internet.
 website:
@@ -133,6 +134,14 @@ website-register-whitelist:
 #[EN] If you use the login whitelist, set here the names of players allows to login. [FR] Si vous utilisez la whitelist de connexion, mettez ici le nom des joueurs autorisés à se connecter.
 website-login-whitelist:
 - STEVE
+
+multi-server:
+  enable: false
+  server-name: "Server"
+  enable-log-research-in-multiserver: false
+  
+trace-item:
+  enable: false
 
 #[EN] Discord integration settings. [FR] Paramètres de l'intégration Discord.
 #For create discord bot, get token and more, see https://discordpy.readthedocs.io/en/stable/discord.html
@@ -176,6 +185,7 @@ splitted-discord-logs:
   website-logout: "-"
   website-logs-search: "-"
   website-register: "-"
+  trace-item-action: "-"
 
 #[EN] Enable or disable specific Discord log events. [FR] Activer ou désactiver des événements de log Discord spécifiques.
 enable-discord-logs:
@@ -203,3 +213,4 @@ enable-discord-logs:
   website-logout: true
   website-logs-search: true
   website-register: true
+  trace-item-action: true

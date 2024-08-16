@@ -86,6 +86,8 @@ messages:
   no-matching-entries: "&cAucune entrée correspondante trouvée."
   #Message affichant les logs trouvées.
   logs-found: "&aLogs trouvés (Page %d/%d) (Limite: %d) :"
+  #Message d'utilisation de la commande /wl traceitem
+  usage-traceitem: "&cUtilisation : /wl traceitem <search/give/settrace/removetrace/check> <paramètres>"
   #Message indiquant comment accéder à la page suivante des logs.
   next-page: "&cTapez /wl page "
   #Message d'erreur lorsque le numéro de page spécifié est trop élevé.
@@ -114,6 +116,16 @@ messages:
   wrong-integer-format-setlimit: "&cVous devez mettre un chiffre valide et supérieur à 0 pour cette commande !"
   #Message envoyé lorsque la limite avec la commande /wl tool setlimit à correctement été définie !
   limit-correctly-set: "&aLimite correctement définie !"
+  multi-server-disable: "&cLa feature de multi-serveur est désactivé sur ce serveur, ou la recherche inter-serveur est désactivé. Vous ne pouvez pas faire de recherches avec l'argument 's:' !"
+  must-have-item-in-hand: "&cVous devez avoir un item dans votre main pour executer cette commande !"
+  item-not-traced: "&cCet item n'est pas tracé par le plugin WatchLogs !"
+  trace-item-header: "&6Liste de toutes les actions avec l'item %u :"
+  trace-item-not-enable: "&cLa feature de traceitem est désactivée !"
+  error-traceitem-db: "&4Cette item possède un UUID de traceitem, mais celui ci est introuvable dans la base de donnée !"
+  item-already-traced: "&cCette item est déjà tracé ! Faites /wl traceitem check avec l'item en main pour connaitre son UUID."
+  item-correctly-traced: "&2Vous avez correctement mis un UUID de tracage sur cet item !"
+  trace-correctly-removed: "&2Le tracage de l'item a correctement été supprimé de l'item et de la base de donnée !"
+  trace-item-uuid: "&eUUID de l'item dans vos mains : %uuid"
 
 discord:
   #Titre de la commande d'information du bot et du plugin.
@@ -140,3 +152,4 @@ discord:
   log_location_hidden: ":x: Caché par les Administrateurs"
   #Nom de l'index des données dans une log Discord.
   log_data: ":scroll: Donnée à propos de cette log"
+  server-name: ":computer: Serveur"
