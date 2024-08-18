@@ -2,7 +2,7 @@ package fr.Boulldogo.WatchLogs.Discord.Commands;
 
 import java.util.List;
 
-import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 import fr.Boulldogo.WatchLogs.Utils.ActionUtils;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -14,9 +14,9 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 
 public class SetupSplitCommand implements SlashCommand {
 	
-	private final Main plugin;
+	private final WatchLogsPlugin plugin;
 	
-	public SetupSplitCommand(Main plugin) {
+	public SetupSplitCommand(WatchLogsPlugin plugin) {
 		this.plugin = plugin;
 	}
 

@@ -1,6 +1,6 @@
 package fr.Boulldogo.WatchLogs.Discord.Commands;
 
-import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -10,9 +10,9 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class SetupCommand implements SlashCommand {
 
-    private final Main plugin;
+    private final WatchLogsPlugin plugin;
 
-    public SetupCommand(Main plugin) {
+    public SetupCommand(WatchLogsPlugin plugin) {
         this.plugin = plugin;
     }
 

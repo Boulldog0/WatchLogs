@@ -6,7 +6,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 
-import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 import fr.Boulldogo.WatchLogs.Database.DatabaseManager;
 import fr.Boulldogo.WatchLogs.Events.JsonDataExportEvent;
 import fr.Boulldogo.WatchLogs.Events.JsonDataImportEvent;
@@ -18,10 +18,10 @@ import fr.Boulldogo.WatchLogs.Events.WebsiteRegisterEvent;
 
 public class WatchLogsListener implements Listener {
 	
-	private final Main plugin;
+	private final WatchLogsPlugin plugin;
 	private final DatabaseManager databaseManager;
 	
-	public WatchLogsListener(Main plugin, DatabaseManager databaseManager) {
+	public WatchLogsListener(WatchLogsPlugin plugin, DatabaseManager databaseManager) {
 		this.plugin = plugin;
 		this.databaseManager = databaseManager;
 	}

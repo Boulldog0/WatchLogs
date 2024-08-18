@@ -13,16 +13,16 @@ import org.bukkit.entity.Player;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 import fr.Boulldogo.WatchLogs.Events.JsonDataExportEvent;
 import fr.Boulldogo.WatchLogs.Events.JsonDataImportEvent;
 
 public class JsonDatabase {
 	
-	private final Main plugin;
+	private final WatchLogsPlugin plugin;
 	private final DatabaseManager databaseManager;
 	
-	public JsonDatabase(Main plugin, DatabaseManager databaseManager) {
+	public JsonDatabase(WatchLogsPlugin plugin, DatabaseManager databaseManager) {
 		this.plugin = plugin;
 		this.databaseManager = databaseManager;
 	}

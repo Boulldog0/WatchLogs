@@ -6,15 +6,15 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 import fr.Boulldogo.WatchLogs.Utils.WebUtils;
 import net.md_5.bungee.api.ChatColor;
 
 public class PlayerListener implements Listener {
 
-    private Main plugin;
+    private WatchLogsPlugin plugin;
 
-    public PlayerListener(Main plugin) {
+    public PlayerListener(WatchLogsPlugin plugin) {
         this.plugin = plugin;
     }
 

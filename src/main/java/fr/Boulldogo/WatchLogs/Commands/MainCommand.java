@@ -27,7 +27,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 import fr.Boulldogo.WatchLogs.Database.DatabaseManager;
 import fr.Boulldogo.WatchLogs.Database.JsonDatabase;
 import fr.Boulldogo.WatchLogs.Listener.ToolListener;
@@ -38,12 +38,12 @@ import fr.Boulldogo.WatchLogs.Utils.WebUtils;
 
 public class MainCommand implements CommandExecutor, TabCompleter{
     
-    public final Main plugin;
+    public final WatchLogsPlugin plugin;
     public DatabaseManager databaseManager;
     public JsonDatabase jsonDatabase;
     private Random random = new Random();
     
-    public MainCommand(Main plugin, DatabaseManager databaseManager, JsonDatabase jsonDatabase) {
+    public MainCommand(WatchLogsPlugin plugin, DatabaseManager databaseManager, JsonDatabase jsonDatabase) {
         this.plugin = plugin;
         this.databaseManager = databaseManager;
         this.jsonDatabase = jsonDatabase;

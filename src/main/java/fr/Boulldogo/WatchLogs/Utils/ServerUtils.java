@@ -11,13 +11,13 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
 
-import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 
 public class ServerUtils {
 	
-	private final Main plugin;
+	private final WatchLogsPlugin plugin;
 	
-	public ServerUtils(Main plugin) {
+	public ServerUtils(WatchLogsPlugin plugin) {
 		this.plugin = plugin;
 	}
 

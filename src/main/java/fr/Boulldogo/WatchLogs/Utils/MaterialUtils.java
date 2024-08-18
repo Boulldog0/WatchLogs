@@ -4,13 +4,13 @@ import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
 
-import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 
 public class MaterialUtils {
 	
-	private final Main plugin;
+	private final WatchLogsPlugin plugin;
     
-    public MaterialUtils(Main plugin) {
+    public MaterialUtils(WatchLogsPlugin plugin) {
     	this.plugin = plugin;
     }
     

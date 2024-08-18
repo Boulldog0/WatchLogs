@@ -10,15 +10,15 @@ import java.awt.Color;
 
 import com.vdurmont.emoji.EmojiParser;
 
-import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 import fr.Boulldogo.WatchLogs.Discord.SetupDiscordBot;
 
 public class InfoCommand implements SlashCommand {
 
     private final SetupDiscordBot main;
-    private final Main plugin;
+    private final WatchLogsPlugin plugin;
 
-    public InfoCommand(Main plugin, SetupDiscordBot main) {
+    public InfoCommand(WatchLogsPlugin plugin, SetupDiscordBot main) {
         this.main = main;
         this.plugin = plugin;
     }

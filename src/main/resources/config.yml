@@ -46,6 +46,8 @@ max-radius-research: 5
 use-item-reborn-system: true
 #[EN] For /wl gdeath, define if you want to cancel command execution if player's inventory is not empty. [FR] Pour le /wl gdeath, défini si vous souhaitez arrêer l'execution de la commande si l'inventaire du joueur n'est pas vide.
 cancel-if-inventory-is-not-empty: false
+#[EN] Define if you want to allow the external actions loggings (from the others plugins). [FR] Défini si vous souhaitez activer le logging d'actions externes (venus d'autres plugins)
+allow-external-actions: true
 
 #[EN] List of commands that will not be logged in the logs. [FR] Liste des commandes qui ne seront pas enregistrés dans les logs.
 blacklist-commands:
@@ -142,6 +144,8 @@ multi-server:
   
 trace-item:
   enable: false
+  
+plugins-integrations: {}
 
 #[EN] Discord integration settings. [FR] Paramètres de l'intégration Discord.
 #For create discord bot, get token and more, see https://discordpy.readthedocs.io/en/stable/discord.html

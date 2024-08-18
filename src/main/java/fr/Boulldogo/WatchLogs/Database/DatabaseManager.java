@@ -17,7 +17,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.json.JSONObject;
 
-import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 import fr.Boulldogo.WatchLogs.Discord.SetupDiscordBot;
 import fr.Boulldogo.WatchLogs.Utils.ActionUtils;
 import fr.Boulldogo.WatchLogs.Utils.BCryptUtils;
@@ -31,10 +31,10 @@ public class DatabaseManager {
     private String password;
     private Logger logger;
     private boolean useMysql;
-    private final Main plugin;
+    private final WatchLogsPlugin plugin;
 	public ItemDataSerializer dataSerializer;
 
-    public DatabaseManager(String url, String username, String password, Logger logger, boolean useMysql, Main plugin, ItemDataSerializer dataSerializer) {
+    public DatabaseManager(String url, String username, String password, Logger logger, boolean useMysql, WatchLogsPlugin plugin, ItemDataSerializer dataSerializer) {
         this.url = url;
         this.username = username;
         this.password = password;

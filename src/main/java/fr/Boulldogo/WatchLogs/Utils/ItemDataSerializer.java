@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import de.tr7zw.nbtapi.NBTItem;
-import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -24,9 +24,9 @@ public class ItemDataSerializer {
 
     private static final Gson gson = new GsonBuilder().enableComplexMapKeySerialization().create();
     private final boolean usePersistentDataContainer;
-    private final Main plugin;
+    private final WatchLogsPlugin plugin;
 
-    public ItemDataSerializer(Main plugin) {
+    public ItemDataSerializer(WatchLogsPlugin plugin) {
     	this.plugin = plugin;
         this.usePersistentDataContainer = isPersistentDataContainerAvailable();
     }

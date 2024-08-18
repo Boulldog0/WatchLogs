@@ -12,16 +12,16 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import de.tr7zw.nbtapi.NBTItem;
-import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 import fr.Boulldogo.WatchLogs.Database.DatabaseManager;
 
 public class TraceItemUtils {
 
-    private final Main plugin;
+    private final WatchLogsPlugin plugin;
     private final DatabaseManager dbManager;
     private final boolean usePersistentDataContainer; 
 
-    public TraceItemUtils(Main plugin, DatabaseManager dbManager) {
+    public TraceItemUtils(WatchLogsPlugin plugin, DatabaseManager dbManager) {
         this.plugin = plugin;
         this.dbManager = dbManager;
         this.usePersistentDataContainer = isPersistentDataContainerAvailable();  

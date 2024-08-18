@@ -36,7 +36,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
 
-import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 import fr.Boulldogo.WatchLogs.Database.DatabaseManager;
 import fr.Boulldogo.WatchLogs.Events.TracedItemActionEvent;
 import fr.Boulldogo.WatchLogs.Utils.ItemDataSerializer;
@@ -47,13 +47,13 @@ import net.md_5.bungee.api.ChatColor;
 @SuppressWarnings("deprecation")
 public class MinecraftListener implements Listener {
 	
-	public final Main plugin;
+	public final WatchLogsPlugin plugin;
 	public DatabaseManager databaseManager;
 	public MaterialUtils materialUtils;
 	public ItemDataSerializer dataSerializer;
 	private TraceItemUtils tiu;
 	
-	public MinecraftListener(Main plugin, DatabaseManager databaseManager, MaterialUtils materialUtils, ItemDataSerializer dataSerializer) {
+	public MinecraftListener(WatchLogsPlugin plugin, DatabaseManager databaseManager, MaterialUtils materialUtils, ItemDataSerializer dataSerializer) {
 		this.plugin = plugin;
 		this.databaseManager = databaseManager;
 		this.materialUtils = materialUtils;

@@ -21,7 +21,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
 
-import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 import fr.Boulldogo.WatchLogs.Database.DatabaseManager;
 import fr.Boulldogo.WatchLogs.Events.WebsiteLoginEvent;
 import fr.Boulldogo.WatchLogs.Events.WebsiteLogoutEvent;
@@ -35,11 +35,11 @@ import static spark.Spark.*;
 
 public class WebServer {
 
-    private final Main plugin;
+    private final WatchLogsPlugin plugin;
     private final DatabaseManager databaseManager;
     private final Algorithm algorithm;
 
-    public WebServer(Main plugin, DatabaseManager databaseManager, String securityKey) {
+    public WebServer(WatchLogsPlugin plugin, DatabaseManager databaseManager, String securityKey) {
         this.plugin = plugin;
         this.databaseManager = databaseManager;
         this.algorithm = Algorithm.HMAC256(securityKey);

@@ -22,17 +22,17 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 import fr.Boulldogo.WatchLogs.Database.DatabaseManager;
 import fr.Boulldogo.WatchLogs.Utils.MaterialUtils;
 import fr.Boulldogo.WatchLogs.Utils.PlayerSession;
 
 public class ToolListener implements Listener {
     
-    public final Main plugin;
+    public final WatchLogsPlugin plugin;
     public DatabaseManager databaseManager;
     
-    public ToolListener(Main plugin, DatabaseManager databaseManager) {
+    public ToolListener(WatchLogsPlugin plugin, DatabaseManager databaseManager) {
         this.plugin = plugin;
         this.databaseManager = databaseManager;
     }

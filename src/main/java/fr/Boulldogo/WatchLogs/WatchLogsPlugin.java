@@ -24,6 +24,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -38,7 +39,7 @@ import fr.Boulldogo.WatchLogs.Listener.WatchLogsListener;
 import fr.Boulldogo.WatchLogs.Utils.*;
 import fr.Boulldogo.WatchLogs.Web.WebServer;
 
-public class Main extends JavaPlugin {
+public class WatchLogsPlugin extends JavaPlugin {
 	
 	public boolean EnableWorldGuard = true;
     private Map<Player, PlayerSession> playerSessions;
@@ -59,6 +60,7 @@ public class Main extends JavaPlugin {
     private PermissionChecker permissionChecker; 
     private ServerUtils serverUtils;
     private TraceItemUtils traceItemUtils;
+    private static WatchLogsPlugin plugin;
     
 	public void onEnable() {
 		this.getLogger().info("==============[Enable Start of WatchLogs]==============");
@@ -96,6 +98,7 @@ public class Main extends JavaPlugin {
 	    this.materialUtils = new MaterialUtils(this);
 	    this.dataSerializer = new ItemDataSerializer(this);
 	    this.serverUtils = new ServerUtils(this);
+	    WatchLogsPlugin.plugin = this;
 	    
 	    YamlUpdater updater = new YamlUpdater(this);
 		
@@ -321,6 +324,10 @@ public class Main extends JavaPlugin {
 		return this.isUpToDate;
 	}
 	
+	public static WatchLogsPlugin getPlugin() {
+		return plugin;
+	}
+	
 	public PermissionChecker getPermissionChecker() {
 		return permissionChecker;
 	}
@@ -341,7 +348,7 @@ public class Main extends JavaPlugin {
 		return traceItemUtils;
 	}
 	
-	public void runSaveLogFile() {
+	private void runSaveLogFile() {
 		new BukkitRunnable() {
 			
 			@Override
@@ -394,7 +401,7 @@ public class Main extends JavaPlugin {
 	    }
 	}
 	
-    private void saveDefaultLangFile(String fileName) {
+	private void saveDefaultLangFile(String fileName) {
         File langFile = new File(getDataFolder(), fileName);
         if(!langFile.exists()) {
             getDataFolder().mkdirs();
@@ -415,7 +422,7 @@ public class Main extends JavaPlugin {
         }
     }
 
-    private void loadLangFile(String fileName) {
+	private void loadLangFile(String fileName) {
         File langFile = new File(getDataFolder(), fileName);
         if(langFile.exists()) {
             YamlConfiguration langConfig = YamlConfiguration.loadConfiguration(langFile);
@@ -450,7 +457,7 @@ public class Main extends JavaPlugin {
 		}.runTaskTimer(this, 0, 1200);
 	}
 	
-	public void runSaveFile() {
+	private void runSaveFile() {
         SimpleDateFormat todayFileName = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
         
         Calendar calendar = Calendar.getInstance();
@@ -504,7 +511,7 @@ public class Main extends JavaPlugin {
 	    }
 	}
 	
-	public void runDeleteFile() {
+	private void runDeleteFile() {
 		int daysToKeep = this.getConfig().getInt("yml-log-file-archive-delete");
 		int daysToKeepDb = this.getConfig().getInt("database-log-delete");
 	    File folder = new File(this.getDataFolder(), "logs/archives");

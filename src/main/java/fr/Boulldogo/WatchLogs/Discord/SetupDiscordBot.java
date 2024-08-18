@@ -12,7 +12,7 @@ import javax.security.auth.login.LoginException;
 
 import com.vdurmont.emoji.EmojiParser;
 
-import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 import fr.Boulldogo.WatchLogs.Database.DatabaseManager;
 import fr.Boulldogo.WatchLogs.Discord.Commands.InfoCommand;
 import fr.Boulldogo.WatchLogs.Discord.Commands.ProjectCommand;
@@ -36,13 +36,13 @@ public class SetupDiscordBot extends ListenerAdapter {
 
     private final Map<String, SlashCommand> commands = new HashMap<>();
     private JDA jda;
-    private final Main plugin;
+    private final WatchLogsPlugin plugin;
     @SuppressWarnings("unused")
 	private Random random = new Random();
     @SuppressWarnings("unused")
 	private final DatabaseManager databaseManager;
 
-    public SetupDiscordBot(Main plugin, DatabaseManager databaseManager) {
+    public SetupDiscordBot(WatchLogsPlugin plugin, DatabaseManager databaseManager) {
         this.plugin = plugin;
         this.databaseManager = databaseManager;
     }

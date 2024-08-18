@@ -3,17 +3,17 @@ package fr.Boulldogo.WatchLogs.Utils;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
-import fr.Boulldogo.WatchLogs.Main;
+import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 
 import java.io.*;
 import java.util.*;
 
 public class YamlUpdater {
-    private final Main plugin;
+    private final WatchLogsPlugin plugin;
     private final Yaml yamlLoader;
     private final Yaml yamlDumper;
 
-    public YamlUpdater(Main plugin) {
+    public YamlUpdater(WatchLogsPlugin plugin) {
         this.plugin = plugin;
         this.yamlLoader = new Yaml();
 
