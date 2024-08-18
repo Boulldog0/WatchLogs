@@ -185,3 +185,41 @@ To utilize Discord integration features of WatchLogs, you need to set up a Disco
    - Your WatchLogs Discord bot is now set up and ready to use! You can now use Discord commands to interact with the plugin and receive real-time log updates.
 
 That's it! You've successfully set up a Discord bot for WatchLogs integration. If you encounter any issues or need further assistance, don't hesitate to reach out to our support team on our Discord server.
+
+## 🤓 Nerd zone : how to use the WatchLogs api : 
+
+For the API, there are two utilities classes : `WatchLogsPlugin` (Main class of the plugin) and `WatchLogsAPI`. For call `WatchLogsAPI`, you must have the instance of WatchLogsPlugin. For that, you can have the instance with the line : `WatchLogsPlugin watchlogs = WatchLogsAPI.getWatchLogsPlugin();`. After, you can declare WatchLogsAPI for use all the API with the line `WatchLogsAPI api = new WatchLogsAPI(watchlogs);`. In the WatchLogsAPI class, you have 6 functions (without `getWatchLogsPlugin()`) : 
+
+#### - `customActionsAreEnable()` (boolean function) : return true if WatchLogs allows the customs actions logging (configurable in the configuration of WatchLogs by the owners of servers)
+
+Usage : `boolean actionsAreEnable = api.customActionsAreEnable();`
+
+#### - `addCustomAction()`(void function) : Add a custom action into the WatchLogs system (register an Action in the actions list for research command, web panel and more.) You must use this function for register your own custom actions.
+
+-> Required settings : Plugin (your own plugin instance), Action name (the name of the action without formatting, like "item-drop"), Formatted action name (the formatted name for your action, like "Item Drop")
+
+Usage : `api.addCustomAction(plugin, "item-drop", "Item Drop");`
+
+#### - `addCustomLog()` (void function) : Add a custom log into the WatchLogs database, in the panel, on the discord bot and more.
+
+-> Required settings : Action name (without formatting, an action registed before with addCustomAction()), Player (the player who make the action), A location ⚠️ STRING (in format return by the fonction getFormattedLocationString()) ⚠️, Worldname (the name of the world where the actions was performed), result string (what you want to display in the result of the action, like that : "Item: " + id +(data != 0 ? ":" +  data : ""))
+
+Usage : `api.addCustomLog("item-drop", player, api.getFormattedLocationString(location), world, "Item : NETHERITE_SWORD");`
+
+#### - `addItemReborn()` (void function) : Add an item into the watchlogs reborn item system.
+
+-> Required settings : ItemStack (the item concerned by the reborn)
+
+Usage : `api.addItemReborn(stack);`
+
+#### - `customActionIsEnable()` (boolean function) : Return true if the given action is enable into the WatchLogs plugin configuration
+
+-> Required settings : Action name (without formatting)
+
+Usage : `boolean enable = api.customActionIsEnable("item-drop");`
+
+#### - `getFormattedLocationString()` (string function) : Return the correct formatted String of a location (for the function addCustomLog())
+
+-> Required settings : Location
+
+Usage : `String loc = api.getFormattedLocationString(Location);`
