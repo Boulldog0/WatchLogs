@@ -194,6 +194,7 @@ public class MinecraftListener implements Listener {
 	}
 
 	private void logTransfer(Player player, ItemStack item, Inventory fromInventory, Inventory toInventory, Location location, String containerName, String name) {
+		if(item == null) return;
         String id = materialUtils.getItemName(item);
 	    if(isLogEnable("container-transaction") && materialUtils.isItemActivated(id)) {
 	        int data = getItemData(item);

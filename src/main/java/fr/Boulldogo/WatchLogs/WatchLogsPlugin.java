@@ -7,9 +7,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.regex.Matcher;
@@ -61,6 +63,7 @@ public class WatchLogsPlugin extends JavaPlugin {
     private ServerUtils serverUtils;
     private TraceItemUtils traceItemUtils;
     private static WatchLogsPlugin plugin;
+	private final List<String> servers = new ArrayList<>();
     
 	public void onEnable() {
 		this.getLogger().info("==============[Enable Start of WatchLogs]==============");
@@ -322,6 +325,14 @@ public class WatchLogsPlugin extends JavaPlugin {
 	
 	public boolean isUpToDate() {
 		return this.isUpToDate;
+	}
+	
+	public List<String> getServerList() {
+		return servers;
+	}
+	
+	public void addServer(String server) {
+		servers.add(server);
 	}
 	
 	public static WatchLogsPlugin getPlugin() {

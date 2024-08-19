@@ -190,6 +190,8 @@ splitted-discord-logs:
   website-logs-search: "-"
   website-register: "-"
   trace-item-action: "-"
+  
+splitted-discord-custom-logs: {}
 
 #[EN] Enable or disable specific Discord log events. [FR] Activer ou désactiver des événements de log Discord spécifiques.
 enable-discord-logs:
@@ -218,3 +220,5 @@ enable-discord-logs:
   website-logs-search: true
   website-register: true
   trace-item-action: true
+  
+enable-discord-custom-logs: {}

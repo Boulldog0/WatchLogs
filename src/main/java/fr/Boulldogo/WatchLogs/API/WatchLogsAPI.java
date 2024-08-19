@@ -1,5 +1,9 @@
 package fr.Boulldogo.WatchLogs.API;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
@@ -35,9 +39,24 @@ public class WatchLogsAPI {
 			}
 			ActionUtils.customActions.put(actionName, formattedName);
 			
+			
+			if(!plugin.getServerList().contains(requestPlugin.getDescription().getName())) {
+				plugin.addServer(requestPlugin.getDescription().getName());
+			}
+			
 			if(!plugin.getConfig().contains("plugins-integrations." + requestPlugin.getDescription().getName() + "." + actionName)) {
 				plugin.getConfig().set("plugins-integrations." + requestPlugin.getDescription().getName() + "." + actionName, true);
 				plugin.getLogger().info("Adding new action with plugin integration for plugin " + requestPlugin.getDescription().getName() + " : " + actionName);
+				plugin.saveConfig();
+			}
+			
+			if(!plugin.getConfig().contains("splitted-discord-custom-logs." + requestPlugin.getDescription().getName() + "." + actionName)) {
+				plugin.getConfig().set("splitted-discord-custom-logs." + requestPlugin.getDescription().getName() + "." + actionName, "-");
+				plugin.saveConfig();
+			}
+			
+			if(!plugin.getConfig().contains("enable-discord-custom-logs." + requestPlugin.getDescription().getName() + "." + actionName)) {
+				plugin.getConfig().set("enable-discord-custom-logs." + requestPlugin.getDescription().getName() + "." + actionName, true);
 				plugin.saveConfig();
 			}
 		} else {
@@ -71,5 +90,9 @@ public class WatchLogsAPI {
 	public boolean customActionIsEnable(String pluginName, String actionName) {
 		return plugin.getConfig().contains("plugins-integrations." + pluginName + "." + actionName)
 			&& plugin.getConfig().getBoolean("plugins-integrations." + pluginName + "." + actionName);
+	}
+	
+	public String getFormattedLocationString(Location loc) {
+		return loc.getX() + "/" + loc.getY() + "/" + loc.getZ();
 	}
 }

@@ -1243,6 +1243,13 @@ public class DatabaseManager {
     }
     
     private boolean isDiscordLogEnable(String logName) {
+    	if(!ActionUtils.customActions.isEmpty() && ActionUtils.customActions.containsKey(logName)) {
+    		for(String server : plugin.getServerList()) {
+    			if(plugin.getConfig().contains("enable-discord-custom-logs." + server + "." + logName)) {
+    				return plugin.getConfig().getBoolean("enable-discord-custom-logs." + server + "." + logName);
+    			}
+    		}
+    	}
 		return plugin.getConfig().getBoolean("enable-discord-logs." + logName);
 	}
     
