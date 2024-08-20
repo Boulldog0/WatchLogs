@@ -16,7 +16,8 @@ messages:
     - "&7/wl export <lignes> <paramètres> - Exporter un certain nombre de lignes dans un fichier .json avec des paramètres spécifiés."
     - "&7/wl gdeath <id> - Donne l'inventaire relié à une mort précise."
     - "&7/wl search <paramètres> - Recherche des logs avec les paramètres spécifiés."
-    - "&7/wl website <givecode/deleteaccount/port> <args> - Commandes relatives au site internet."
+    - "&7/wl website <givecode/deleteaccount/port/2FA/unbanip> <args> - Commandes relatives au site internet."
+    - "&7/wl traceitem <search/give/settrace/removetrace/check> <settings> - Commandes de la feature de tracage d'item'."
     - "&6========================================================"
   #Message indiquant que l'outil de logs a été correctement supprimé.
   tool-correctly-removed: "&aL'outil de logs à correctement été supprimé."
@@ -35,7 +36,7 @@ messages:
   #Message d'utilisation incorrecte de la commande /wl giveitem.
   usage-giveitem: "&cUtilisation : /wl giveitem <id>"
   #Message d'utilisation incorrecte de la commande /wl website
-  usage-website: "&cUtilisation : /wl website <givecode/deleteaccount/port> <args>"
+  usage-website: "&cUtilisation : /wl website <givecode/deleteaccount/port/2FA/unbanip> <args>"
   #Message d'erreur envoyé lorsqu'un joueur tente d'utiliser le /wl giveitem alors que le module est désactivé.
   module-item-reborn-disable: "&cLe module de regénération des items est désactivé."
   #Message d'erreur lorsque l'id donné n'est pas un id d'action avec les items valide.
@@ -126,6 +127,9 @@ messages:
   item-correctly-traced: "&2Vous avez correctement mis un UUID de tracage sur cet item !"
   trace-correctly-removed: "&2Le tracage de l'item a correctement été supprimé de l'item et de la base de donnée !"
   trace-item-uuid: "&eUUID de l'item dans vos mains : %uuid"
+  usage_website_unbanip: "&cUtilisation : /wl website unbanip <ip>"
+  ip-not-banned: "&cCette adresse IP n'est pas banni du panel web !"
+  ip-correctly-unban: "&2Cette adresse IP a correctement été débanni du panel web !"
 
 discord:
   #Titre de la commande d'information du bot et du plugin.

@@ -64,6 +64,8 @@ public class WatchLogsPlugin extends JavaPlugin {
     private TraceItemUtils traceItemUtils;
     private static WatchLogsPlugin plugin;
 	private final List<String> servers = new ArrayList<>();
+	private A2FUtils A2fUtils;
+	private WebServer webServer;
     
 	public void onEnable() {
 		this.getLogger().info("==============[Enable Start of WatchLogs]==============");
@@ -101,6 +103,7 @@ public class WatchLogsPlugin extends JavaPlugin {
 	    this.materialUtils = new MaterialUtils(this);
 	    this.dataSerializer = new ItemDataSerializer(this);
 	    this.serverUtils = new ServerUtils(this);
+	    this.A2fUtils = new A2FUtils(this);
 	    WatchLogsPlugin.plugin = this;
 	    
 	    YamlUpdater updater = new YamlUpdater(this);
@@ -142,7 +145,7 @@ public class WatchLogsPlugin extends JavaPlugin {
 			   String password = this.getConfig().getString("mysql.password");
 			   String database = this.getConfig().getString("mysql.database");
 			
-			   String url = "jdbc:mysql://" + connectAdress + ":" + port + "/" + database;
+			   String url = "jdbc:mysql://" + connectAdress + ":" + port + "/" + database + "?useSSL=false";
 			
 			    this.databaseManager = new DatabaseManager(url, username, password, this.getLogger(), useMySQLDatabase, this, dataSerializer);
 		        databaseManager.connect();
@@ -199,7 +202,7 @@ public class WatchLogsPlugin extends JavaPlugin {
 			
 			String sKey = secret.getString("secret_key");
 			
-			WebServer webServer = new WebServer(this, databaseManager, sKey);
+			this.webServer = new WebServer(this, databaseManager, sKey);
 			
 			webServer.start();
 		} else {
@@ -357,6 +360,14 @@ public class WatchLogsPlugin extends JavaPlugin {
 	
 	public TraceItemUtils getTraceItemUtils() {
 		return traceItemUtils;
+	}
+	
+	public A2FUtils getA2FUtils() {
+		return A2fUtils;
+	}
+	
+	public WebServer getWebServer() {
+		return webServer;
 	}
 	
 	private void runSaveLogFile() {

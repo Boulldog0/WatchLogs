@@ -127,6 +127,9 @@ website:
    #[EN] Define the time when the logs can be showed in the web panel. Take a little time, because the longer the time, the longer the search work in the database will take and will risk crashing your server.
    #[FR] Défini le temps durant lequel les logs pourront être montrés sur le panel web. Mettez un petit temps, car plus le temps sera grand, plus le travaille de recherche dans la base de donnée sera long et risquera de faire crash votre serveur.  
    website-log-time-limit-showed: "7d"
+   enable_2fa: true
+   2fa_codes_length: 8
+   2fa_codes_expiration: 300
    
 #[EN] If you use the register whitelist, set here the names of players allows to register. [FR] Si vous utiliser la whitelist d'enregistrement, mettez ici le nom des joueurs autorisés à s'enregistrer.
 website-register-whitelist:

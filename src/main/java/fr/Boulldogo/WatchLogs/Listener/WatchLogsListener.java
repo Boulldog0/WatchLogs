@@ -56,7 +56,7 @@ public class WatchLogsListener implements Listener {
 		String ip = e.getAdress();
 		
 		if(isLogEnable("website-login")) {
-			databaseManager.insertLog(username, "website-login", "Unknow (Non-ingame event)", "Unknow (Non-ingame event)", "Login with ip adress " + ip);
+			databaseManager.insertLog(username, "website-login", "Unknow (Non-ingame event)", "Unknow (Non-ingame event)", "Login with ip adress " + ip + " | Using 2FA : " + String.valueOf(e.isUsingA2F()));
 		}
 	}
 	

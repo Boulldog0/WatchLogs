@@ -31,10 +31,12 @@ import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 import fr.Boulldogo.WatchLogs.Database.DatabaseManager;
 import fr.Boulldogo.WatchLogs.Database.JsonDatabase;
 import fr.Boulldogo.WatchLogs.Listener.ToolListener;
+import fr.Boulldogo.WatchLogs.Utils.A2FUtils;
 import fr.Boulldogo.WatchLogs.Utils.ActionUtils;
 import fr.Boulldogo.WatchLogs.Utils.PlayerSession;
 import fr.Boulldogo.WatchLogs.Utils.TraceItemUtils;
 import fr.Boulldogo.WatchLogs.Utils.WebUtils;
+import fr.Boulldogo.WatchLogs.Web.WebServer;
 
 public class MainCommand implements CommandExecutor, TabCompleter{
     
@@ -42,6 +44,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
     public DatabaseManager databaseManager;
     public JsonDatabase jsonDatabase;
     private Random random = new Random();
+    private Player player;
     
     public MainCommand(WatchLogsPlugin plugin, DatabaseManager databaseManager, JsonDatabase jsonDatabase) {
         this.plugin = plugin;
@@ -53,12 +56,22 @@ public class MainCommand implements CommandExecutor, TabCompleter{
     @Override
     public boolean onCommand(CommandSender sender, Command arg1, String arg2, String[] args) {
         String prefix = plugin.getConfig().getBoolean("use-prefix") ? translateString(plugin.getConfig().getString("prefix")) : "";
-        if(!(sender instanceof Player) || !(sender instanceof Player) && !(args.length >= 2 && args[0].equals("traceitem") && args[1].equals("give"))) {
-            plugin.getLogger().info("Only online players can use WatchLogs(/wl) commands!");
-            return true;
+        if(!(sender instanceof Player)) {
+        	if(args.length >= 2) {
+        		String arg0 = args[0];
+        		String arg = args[1];
+        		
+        		if(!(arg0.equals("website") && arg.equals("gen2FA") || arg0.equals("traceitem") && arg.equals("give"))) {
+                    plugin.getLogger().info("Only online players can use WatchLogs(/wl) commands!");
+                    return true;
+        		}
+        	} else {
+                plugin.getLogger().info("Only online players can use WatchLogs(/wl) commands!");
+                return true;
+        	}
+        } else {
+        	player = (Player) sender;
         }
-        
-        Player player =(Player) sender;
         
         if(args.length < 1) {
             player.sendMessage(translateString(plugin.getLang().getString("messages.unknown-subcommand")));
@@ -226,7 +239,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             
             regenerateItemsForDeath(player, id);
         } else if(subCommand.equals("website")) {
-            if(!player.hasPermission("watchlogs.website")) {
+            if(sender instanceof Player && !player.hasPermission("watchlogs.website")) {
                 player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.have-not-permission")));
                 return true;
             }
@@ -238,7 +251,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             
             String command = args[1];
             
-            if(!command.equals("givecode") && !command.equals("deleteaccount") && !command.equals("port")) {
+            if(!command.equals("givecode") && !command.equals("deleteaccount") && !command.equals("port") && !command.equals("2FA") && !command.equals("gen2FA") && !command.equals("unbanip")) {
             	player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.usage-website")));
             	return true;
             }
@@ -293,6 +306,69 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             } else if(command.equals("port")) {
         		int port = plugin.getConfig().getInt("website.website_port");
         		player.sendMessage(prefix + ChatColor.GREEN + "Web server binded on port " + port + ".");
+        		return true;
+        	} else if(command.equals("2FA")) {
+        		A2FUtils utils = plugin.getA2FUtils();
+        		
+        		if(utils.playerHasCode(player.getName())) {
+        			String code = utils.getPlayerA2FCode(player.getName());
+            		player.sendMessage(prefix + ChatColor.GREEN + "Your 2FA code is : " + code);
+            		return true;
+        		}
+        		
+        		String code = utils.addPlayerA2FCode(player.getName());
+        		player.sendMessage(prefix + ChatColor.GREEN + "Your new 2FA code is : " + code + ". This code exprires in " + plugin.getConfig().getInt("website.2fa_codes_expiration") + " secondes.");
+        		return true;
+        	} else if(command.equals("gen2FA")) {
+        		A2FUtils utils = plugin.getA2FUtils();
+        		if(sender instanceof Player) {
+        			sender.sendMessage(prefix + ChatColor.RED + "Only console can execute this command !");
+        			return true;
+        		}
+        		
+        		if(args.length < 3) {
+        			sender.sendMessage(prefix + ChatColor.RED + "Usage : /wl website gen2FA <playername>");
+        			return true;
+        		}
+        		
+        		if(Bukkit.getOfflinePlayer(args[2]) == null) {
+        			sender.sendMessage(prefix + ChatColor.RED + "Unknow player.");
+        			return true;
+        		}
+        		
+        		if(Bukkit.getOfflinePlayer(args[2]).isOnline()) {
+        			sender.sendMessage(prefix + ChatColor.RED + "This player is online. You can only generate a 2FA code for offline players.");
+        			return true;
+        		}
+        		
+        		String playerName = args[2];
+        		
+        		if(utils.playerHasCode(playerName)) {
+            		sender.sendMessage(prefix + ChatColor.RED + "This player already have an 2FA code ! please wait for the code to be deleted by itself");
+            		return true;
+        		}
+        		
+        		String code = utils.addPlayerA2FCode(playerName);
+        		sender.sendMessage(prefix + ChatColor.GREEN + "New 2FA code generate for player " + playerName + " : " + code);
+        		return true;
+        	} else if(command.equals("unbanip")) {
+        		if(args.length < 3) {
+            		player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.usage-website-unbanip")));
+            		return true;
+        		}
+        		
+        		String IPToUnban = args[2];
+        		
+        		WebServer server = plugin.getWebServer();
+        		
+        		if(!server.getBannedIpsList().contains(IPToUnban)) {
+            		player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.ip-not-banned")));
+            		return true;
+        		}
+        		
+        		server.removeBannedIp(IPToUnban);
+        		player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.ip-correctly-unban")));
+        		plugin.getLogger().warning("IP " + IPToUnban + " unbanned from the web panel by " + player.getName());
         		return true;
         	}
         } else if(subCommand.equals("database")) {
@@ -898,7 +974,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                     completions = handleImportTabCompletion(args);
                     break;
                 case "website":
-                	completions = Arrays.asList("givecode", "deleteaccount", "port");
+                	completions = Arrays.asList("givecode", "deleteaccount", "port", "2FA", "unbanip");
                 default:
                     break;
             }
@@ -908,6 +984,12 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             String subCommand = args[0].toLowerCase();
             if(subCommand.equals("export")) {
                 completions = handleExportTabCompletion(args);
+            } else if(subCommand.equals("website")) {
+            	if(args[1].equals("unbanip")) {
+            		if(!plugin.getWebServer().getBannedIpsList().isEmpty()) {
+            		   plugin.getWebServer().getBannedIpsList().addAll(completions);
+            		}
+            	}
             }
         }
 
