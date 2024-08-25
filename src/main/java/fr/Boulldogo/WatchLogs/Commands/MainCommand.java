@@ -36,6 +36,7 @@ import fr.Boulldogo.WatchLogs.Utils.ActionUtils;
 import fr.Boulldogo.WatchLogs.Utils.PlayerSession;
 import fr.Boulldogo.WatchLogs.Utils.TraceItemUtils;
 import fr.Boulldogo.WatchLogs.Utils.WebUtils;
+import fr.Boulldogo.WatchLogs.Utils.WlToolUtils;
 import fr.Boulldogo.WatchLogs.Web.WebServer;
 
 public class MainCommand implements CommandExecutor, TabCompleter{
@@ -110,11 +111,12 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             }
             
             if(args.length < 2) {
-                if(databaseManager.playerExists(player.getName()) && databaseManager.isToolEnabled(player.getName())) {
-                    databaseManager.setToolEnabled(player.getName(), false);
+                if(plugin.getPlayerSession(player).isSessionActive()) {
+                    plugin.getPlayerSession(player).setSessionActivity(false);
                     ItemStack logBlock = createLogBlock();
                     PlayerInventory inventory = player.getInventory();
                     ItemStack[] contents = inventory.getContents();
+                    plugin.getPlayerSession(player).setSessionActivity(false);
                     for(int i = 0; i < contents.length; i++) {
                         if(contents[i] != null && contents[i].isSimilar(logBlock)) {
                             inventory.setItem(i, new ItemStack(Material.AIR)); 
@@ -123,9 +125,8 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                     player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.tool-correctly-removed")));
                     return true;
                 } else {    
-                    databaseManager.checkOrCreatePlayer(player.getName());
                     if(player.getInventory().getItemInHand().getType() == Material.AIR) {
-                        databaseManager.setToolEnabled(player.getName(), true);
+                        plugin.getPlayerSession(player).setSessionActivity(true);
                         player.getInventory().setItemInHand(createLogBlock());
                         player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.tool-correctly-given")));
                         return true;
@@ -710,32 +711,33 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                     }
                 }
                 
-                List<String> jsonList = databaseManager.getJsonLogs(worldSearch, playerSearch, useRayon, player.getLocation().getBlockX(), player.getLocation().getBlockY(), player.getLocation().getBlockZ(), radiusSearch, actionSearch, filterSearch, timeFilter, useTimestamp);
-                
-                boolean export = jsonDatabase.exportDatabaseDatas(lines.equals("all") ? jsonList.size() : Integer.parseInt(lines), jsonList, settings, player);
-                if(export) {
-                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.export-success")));
-                    return true;
-                } else {
-                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.export-error")));
-                    return true;
-                }
+                databaseManager.getJsonLogs(worldSearch, playerSearch, useRayon, player.getLocation().getBlockX(), player.getLocation().getBlockY(), player.getLocation().getBlockZ(), radiusSearch, actionSearch, filterSearch, timeFilter, useTimestamp, list -> {       
+                    boolean export = jsonDatabase.exportDatabaseDatas(lines.equals("all") ? list.size() : Integer.parseInt(lines), list, settings, player);
+                    if(export) {
+                        player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.export-success")));
+                        return;
+                    } else {
+                        player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.export-error")));
+                        return;
+                    }
+                });
+                return true;
             } else {
-            	List<String> jsonList = new ArrayList<>();
 				try {
-					jsonList = databaseManager.getAllLogs(false, true);
-				} catch(SQLException e) {
+					databaseManager.getAllLogs(false, true, jsonList -> {  	
+						boolean export = jsonDatabase.exportDatabaseDatas(lines.equals("all") ? jsonList.size() : Integer.parseInt(lines), jsonList, "all", player);
+					    if(export) {
+					        player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.export-success")));
+					        return;
+					    } else {
+					        player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.export-error")));
+					        return;
+					    }
+					});
+				} catch (SQLException e) {
 					e.printStackTrace();
 				}
-            	
-            	boolean export = jsonDatabase.exportDatabaseDatas(lines.equals("all") ? jsonList.size() : Integer.parseInt(lines), jsonList, "all", player);
-                if(export) {
-                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.export-success")));
-                    return true;
-                } else {
-                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.export-error")));
-                    return true;
-                }
+				return true;
             } 
         } else if(subCommand.equals("import")) {
             if(!player.hasPermission("watchlogs.import")) {
@@ -925,20 +927,22 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                     return true;
                 }
             }
-
+            
             Location location = player.getLocation();
             PlayerSession session = plugin.getPlayerSession(player);
-            session.setToolLog(false);
-            session.setCurrentPage(1);
             session.setLimit(limit);
-            List<String> searchResult = databaseManager.getLogs(
-                worldSearch, playerSearch, useRayon,
-                location.getBlockX(), location.getBlockY(), location.getBlockZ(),
-                radiusSearch, actionSearch, filterSearch, timeFilter, useTimestamp, limit, server
-            );
-            session.setCurrentLogs(searchResult);
+            
+            databaseManager.getLogs(
+                    worldSearch, playerSearch, useRayon,
+                    location.getBlockX(), location.getBlockY(), location.getBlockZ(),
+                    radiusSearch, actionSearch, filterSearch, timeFilter, useTimestamp, limit, server, searchResult -> {
 
-            showPage(searchResult, 1, player, limit);
+                        session.setToolLog(false);
+                        session.setCurrentPage(1);
+                        session.setCurrentLogs(searchResult);
+                        showPage(searchResult, 1, player, session.getLimit());
+                    }
+                );
             return true;
         }
         return false;
@@ -1065,7 +1069,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
         }
         
         if(args.length >= 2 && args[1].equals("give")) {
-            List<String> usedParams = Arrays.asList(args).subList(2, args.length - 1);
+            List<String> usedParams = Arrays.asList(args).subList(2, args.length);
             List<String> traceParams = new ArrayList<>(Arrays.asList("name:", "lore:", "enchants:", "player:", "item:"));
             traceParams.removeIf(param -> usedParams.stream().anyMatch(arg -> arg.startsWith(param)));
 
@@ -1207,7 +1211,9 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             meta.setDisplayName(translateString(plugin.getConfig().getString("block-tool.name")));
             stack.setItemMeta(meta);
         }
-        return stack;
+        WlToolUtils toolUtils = new WlToolUtils(plugin);
+        ItemStack finalStack = toolUtils.setTagToItemStack(stack);
+        return finalStack;
     }
 
     public boolean isInteger(String str) {

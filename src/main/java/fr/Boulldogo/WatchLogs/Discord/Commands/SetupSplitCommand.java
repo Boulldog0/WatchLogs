@@ -32,11 +32,13 @@ public class SetupSplitCommand implements SlashCommand {
 
 	@Override
 	public CommandData getCommandData() {
-        OptionData selectOption = new OptionData(OptionType.STRING, "action", "Choose an action").setRequired(true);
+        OptionData selectOption = new OptionData(OptionType.STRING, "action", "Choose an action or give an action by it name.").setRequired(true);
 
         List<String> options = ActionUtils.actions();
-        for (String option : options) {
-            selectOption.addChoice(option, option);
+        if(options.size() < 25) {
+            for(String option : options) {
+                selectOption.addChoice(option, option);
+            }
         }
         
         return Commands.slash(getName(), getDescription())

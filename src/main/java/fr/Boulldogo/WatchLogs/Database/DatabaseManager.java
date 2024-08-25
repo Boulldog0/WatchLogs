@@ -1,9 +1,7 @@
 package fr.Boulldogo.WatchLogs.Database;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.*;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -12,9 +10,9 @@ import java.util.logging.Logger;
 import javax.annotation.Nullable;
 
 import org.bukkit.ChatColor;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Consumer;
 import org.json.JSONObject;
 
 import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
@@ -22,6 +20,7 @@ import fr.Boulldogo.WatchLogs.Discord.SetupDiscordBot;
 import fr.Boulldogo.WatchLogs.Utils.ActionUtils;
 import fr.Boulldogo.WatchLogs.Utils.BCryptUtils;
 import fr.Boulldogo.WatchLogs.Utils.ItemDataSerializer;
+import fr.Boulldogo.WatchLogs.Utils.LogEntry;
 
 public class DatabaseManager {
 
@@ -33,7 +32,9 @@ public class DatabaseManager {
     private boolean useMysql;
     private final WatchLogsPlugin plugin;
 	public ItemDataSerializer dataSerializer;
-
+	private final List<LogEntry> logs = new ArrayList<>();
+	int totalLogs = 0;
+	
     public DatabaseManager(String url, String username, String password, Logger logger, boolean useMysql, WatchLogsPlugin plugin, ItemDataSerializer dataSerializer) {
         this.url = url;
         this.username = username;
@@ -45,34 +46,38 @@ public class DatabaseManager {
     }
 
     public void connect() {
-        try {
-            if(connection != null && !connection.isClosed()) {
-                return;
-            }
-            if(useMysql) {
-                connection = DriverManager.getConnection(url, username, password);
-                logger.info("Connected to the MySQL database.");
-            } else {
-                connection = DriverManager.getConnection(url);
-                logger.info("Connected to the SQLite database.");
-            }
-            createTableIfNotExists();
-            addColumnIfNotExists();
-            maintainConnection();           
-            if(plugin.getConfig().getBoolean("multi-server.enable")) {
-            	String serverName = plugin.getConfig().getString("multi-server.server-name");
-            	if(!doesServerExist(serverName)) {
-            		String adress = plugin.getServerUtils().getExternalIPAddress();
-            		createServer(serverName, adress);
-            	} else {
-            		setServerStatus(serverName, true);
-            	}
-            }
-        } catch(SQLException e) {
-            e.printStackTrace();
-            plugin.getLogger().severe("Error when plugin trying to connect with database! WatchLogs are disabled!");
-            plugin.getServer().getPluginManager().disablePlugin(plugin);
-        }
+    	new BukkitRunnable() {
+			@Override
+			public void run() {
+		        try {
+		            if(connection != null && !connection.isClosed()) {
+		                return;
+		            }
+		            if(useMysql) {
+		                connection = DriverManager.getConnection(url, username, password);
+		                logger.info("Connected to the MySQL database.");
+		            } else {
+		                connection = DriverManager.getConnection(url);
+		                logger.info("Connected to the SQLite database.");
+		            }
+		            createTableIfNotExists();
+		            addColumnIfNotExists();
+		            maintainConnection();
+		            runLogPush();
+		            totalLogs = getLastLogId();
+		            if(plugin.getConfig().getBoolean("multi-server.enable")) {
+		            	String serverName = plugin.getConfig().getString("multi-server.server-name");
+		            	if(!doesServerExist(serverName)) {
+		            		createServer(serverName);
+		            	}
+		            }
+		        } catch(SQLException e) {
+		            e.printStackTrace();
+		            plugin.getLogger().severe("Error when plugin trying to connect with database! WatchLogs are disabled!");
+		            plugin.getServer().getPluginManager().disablePlugin(plugin);
+		        }
+			}	
+    	}.runTaskAsynchronously(plugin);
     }
 
     private void reconnect() {
@@ -106,7 +111,7 @@ public class DatabaseManager {
                     plugin.getServer().getPluginManager().disablePlugin(plugin);
                 }
             }
-        }.runTaskTimer(plugin, 0L, 1200L);
+        }.runTaskTimerAsynchronously(plugin, 0, 300L);
     }
 
     private void createTableIfNotExists() {
@@ -129,14 +134,15 @@ public class DatabaseManager {
             + "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, "
             + "server VARCHAR(255));";
         
-        String sql2 = "CREATE TABLE IF NOT EXISTS watchlogs_players("
-                + "pseudo TEXT(255),"
-                + "tool_enabled BOOLEAN DEFAULT FALSE);";
-        
-        String sql3 = "undefinded";
+        String sql3 = "undefined";
         if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
-            sql3 = "CREATE TABLE IF NOT EXISTS watchlogs_items("
+            sql3 = useMysql ? "CREATE TABLE IF NOT EXISTS watchlogs_items("
                     + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+                    + "item_serialize TEXT,"
+                    + "death_id INTEGER,"
+                    + "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);" :
+                    "CREATE TABLE IF NOT EXISTS watchlogs_items("
+                    + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                     + "item_serialize TEXT,"
                     + "death_id INTEGER,"
                     + "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);";
@@ -148,28 +154,24 @@ public class DatabaseManager {
         
         String sql5 = "undefined";
         if(plugin.getConfig().getBoolean("multi-server.enable")) {
-        	sql5 = "CREATE TABLE IF NOT EXISTS watchlogs_servers("
-        			+ "server_name TEXT(255) UNIQUE, "
-        			+ "server_adress TEXT(255), "
-        			+ "online BOOLEAN DEFAULT FALSE, "
-        			+ "mark_offline INTEGER DEFAULT 0);";
+            sql5 = "CREATE TABLE IF NOT EXISTS watchlogs_servers("
+                    + "server_name TEXT(255) UNIQUE);";
         }
         
         String sql6 = "undefined";
         if(plugin.getConfig().getBoolean("trace-item.enable")) {
-        	sql6 = "CREATE TABLE IF NOT EXISTS watchlogs_traceitem("
-        			+ "uuid VARCHAR(64) UNIQUE, "
-        			+ "actions_id TEXT);";
+            sql6 = "CREATE TABLE IF NOT EXISTS watchlogs_traceitem("
+                    + "uuid VARCHAR(64) UNIQUE, "
+                    + "actions_id TEXT);";
         }
 
         try(Statement stmt = connection.createStatement()) {
             stmt.executeUpdate(sql);
-            stmt.executeUpdate(sql2);
             stmt.executeUpdate(sql4);
             logger.info("Table 'watchlogs_logs' checked/created.");
-            logger.info("Table 'watchlogs_players' checked/created.");
             logger.info("Table 'watchlogs_accounts' checked/created.");
-            if(!sql3.equals("undefinded")) {
+            
+            if(!sql3.equals("undefined")) {
                 stmt.executeUpdate(sql3);
                 logger.info("Table 'watchlogs_items' checked/created.");
             }
@@ -178,13 +180,35 @@ public class DatabaseManager {
                 logger.info("Table 'watchlogs_servers' checked/created.");
             }
             if(!sql6.equals("undefined")) {
-            	stmt.executeUpdate(sql6);
+                stmt.executeUpdate(sql6);
                 logger.info("Table 'watchlogs_traceitem' checked/created.");
             }
+
+            createIndexesIfNotExist(stmt);
         } catch(SQLException e) {
             e.printStackTrace();
         }
+        return;
     }
+    
+    private void createIndexesIfNotExist(Statement stmt) throws SQLException {
+        String indexLocation = "CREATE INDEX IF NOT EXISTS idx_location ON watchlogs_logs(location);";
+        String indexWorld = "CREATE INDEX IF NOT EXISTS idx_world ON watchlogs_logs(world);";
+        String indexAction = "CREATE INDEX IF NOT EXISTS idx_action ON watchlogs_logs(action);";
+        String indexServer = "CREATE INDEX IF NOT EXISTS idx_server ON watchlogs_logs(server);";
+        String indexTimestamp = "CREATE INDEX IF NOT EXISTS idx_timestamp ON watchlogs_logs(timestamp);";
+
+        stmt.executeUpdate(indexLocation);
+        stmt.executeUpdate(indexWorld);
+        stmt.executeUpdate(indexAction);
+
+        if(plugin.getConfig().getBoolean("multi-server.enable")) {
+            stmt.executeUpdate(indexServer);
+        }
+
+        stmt.executeUpdate(indexTimestamp);
+    }
+
     
     public void addColumnIfNotExists() throws SQLException {
     	if(useMysql) {
@@ -232,40 +256,19 @@ public class DatabaseManager {
             	plugin.getLogger().info("Column server already exists in watchlogs_logs.");
             }
     	}
+    	return;
     }
     
-    public boolean createServer(String serverName, String serverAddress) {
-        String query = "INSERT INTO watchlogs_servers (server_name, server_adress, online) VALUES (?, ?, TRUE)";
+    public boolean createServer(String serverName) {
+        String query = "INSERT INTO watchlogs_servers(server_name) VALUES(?)";
         
         try(PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setString(1, serverName);
-            stmt.setString(2, serverAddress);
             stmt.executeUpdate();
             return true;
-        } catch (SQLException e) {
+        } catch(SQLException e) {
             e.printStackTrace();
             return false;
-        }
-    }
-    
-    public boolean setServerStatus(String serverName, boolean isOnline) {
-        String query = "UPDATE watchlogs_servers SET online = ? WHERE server_name = ?";
-        
-        try(PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setBoolean(1, isOnline);
-            stmt.setString(2, serverName);
-            int rowsUpdated = stmt.executeUpdate();
-            return rowsUpdated > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-    
-    public void markServerOffline() {
-        if(plugin.getConfig().getBoolean("multi-server.enable")) {
-        	String serverName = plugin.getConfig().getString("multi-server.server-name");
-    		setServerStatus(serverName, false);
         }
     }
     
@@ -285,22 +288,6 @@ public class DatabaseManager {
         return servers;
     }
     
-    public boolean isServerOnline(String serverName) {
-        String query = "SELECT online FROM watchlogs_servers WHERE server_name = ?";
-        
-        try(PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setString(1, serverName);
-            try(ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getBoolean("online");
-                }
-            }
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
-        return false; 
-    }
-    
     public boolean doesServerExist(String serverName) {
         String query = "SELECT 1 FROM watchlogs_servers WHERE server_name = ?";
         
@@ -313,24 +300,6 @@ public class DatabaseManager {
             e.printStackTrace();
         }
         return false;
-    }
-    
-    public String getServerAdress(String serverName) {
-    	String query = "SELECT server_adress FROM watchlogs_servers WHERE server_name = ?";
-    	
-    	try(PreparedStatement stmt = connection.prepareStatement(query)) {
-    		stmt.setString(1, serverName);
-    		try(ResultSet rs = stmt.executeQuery()) {
-    			if(rs.next()) {
-    				return rs.getString("server_adress");
-    			} else {
-    				return null;
-    			}
-    		}
-    	} catch(SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
     }
     
     public boolean UUIDExists(String UUID) {
@@ -348,14 +317,14 @@ public class DatabaseManager {
     }
     
     public boolean registerFirstItemLog(String UUID, int logId) {
-    	String query = "INSERT INTO watchlogs_traceitem (uuid, actions_id) VALUES (?, ?)";
+    	String query = "INSERT INTO watchlogs_traceitem(uuid, actions_id) VALUES(?, ?)";
     	
     	try(PreparedStatement stmt = connection.prepareStatement(query)) {
     		stmt.setString(1, UUID);
     		stmt.setString(2, String.valueOf(logId));
             stmt.executeUpdate();
             return true;
-    	} catch (SQLException e) {
+    	} catch(SQLException e) {
     		e.printStackTrace();
     		return false;
 		}
@@ -364,13 +333,19 @@ public class DatabaseManager {
     public void setItemStringLog(String UUID, String logString) {
     	String query = "UPDATE watchlogs_traceitem SET actions_id = ? WHERE uuid = ?";
     	
-        try(PreparedStatement pstmt = connection.prepareStatement(query)) {
-            pstmt.setString(1, logString);
-            pstmt.setString(2, UUID);
-            pstmt.executeUpdate();
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
+    	new BukkitRunnable() {
+
+			@Override
+			public void run() {
+		        try(PreparedStatement pstmt = connection.prepareStatement(query)) {
+		            pstmt.setString(1, logString);
+		            pstmt.setString(2, UUID);
+		            pstmt.executeUpdate();
+		        } catch(SQLException e) {
+		            e.printStackTrace();
+		        }
+			}		
+    	}.runTaskAsynchronously(plugin);
     }
     
     public String getActionString(String UUID) throws SQLException {
@@ -583,14 +558,21 @@ public class DatabaseManager {
     @Nullable
     public void addItemEntry(String itemSerialize, boolean isDeath, int deathId) {
         String sql = "INSERT INTO watchlogs_items(item_serialize, death_id, timestamp) VALUES(?, ?, ?)";
-        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, itemSerialize);
-            pstmt.setInt(2,(isDeath ? deathId : -1)); 
-            pstmt.setTimestamp(3, new Timestamp(System.currentTimeMillis())); 
-            pstmt.executeUpdate();
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
+        new BukkitRunnable() {
+
+			@Override
+			public void run() {
+		        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+		            pstmt.setString(1, itemSerialize);
+		            pstmt.setInt(2,(isDeath ? deathId : -1)); 
+		            pstmt.setTimestamp(3, new Timestamp(System.currentTimeMillis())); 
+		            pstmt.executeUpdate();
+		        } catch(SQLException e) {
+		            e.printStackTrace();
+		        }
+			}
+        	
+        }.runTaskAsynchronously(plugin);
     }
 
     public int getLastDeathId() {
@@ -619,58 +601,6 @@ public class DatabaseManager {
         }
         return 0;
     }
-    
-    public boolean playerExists(String playerName) {
-        String sql = "SELECT 1 FROM watchlogs_players WHERE pseudo = ?";
-        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, playerName);
-            ResultSet rs = pstmt.executeQuery();
-            return rs.next();
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    
-    public void checkOrCreatePlayer(String playerName) {
-        if(playerExists(playerName)) {
-            return;
-        }
-        
-        String sql = "INSERT INTO watchlogs_players(pseudo) VALUES(?)";
-        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, playerName);
-            pstmt.executeUpdate();
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public boolean isToolEnabled(String playerName) {
-        String sql = "SELECT tool_enabled FROM watchlogs_players WHERE pseudo = ?";
-        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, playerName);
-            ResultSet rs = pstmt.executeQuery();
-            if(rs.next()) {
-                return rs.getBoolean("tool_enabled");
-            }
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    public void setToolEnabled(String playerName, boolean enabled) {
-        String sql = "UPDATE watchlogs_players SET tool_enabled = ? WHERE pseudo = ?";
-        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setBoolean(1, enabled);
-            pstmt.setString(2, playerName);
-            pstmt.executeUpdate();
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
-    }
 
     public void clearOldData(int days) {
         String sql = useMysql
@@ -698,12 +628,11 @@ public class DatabaseManager {
         }
     }
     
-    public List<String> getLogs(
+    public void getLogs(
     	    String world, String player, boolean useRayon, int centerX, int centerY, int centerZ, int radius,
-    	    String action, String resultFilter, String timeFilter, boolean useTimestamp, int limit, String serverNameResearch
+    	    String action, String resultFilter, String timeFilter, boolean useTimestamp, int limit, String serverNameResearch, Consumer<List<String>> callback
     	) {
     	    String prefix = plugin.getConfig().getBoolean("use-prefix") ? translateString(plugin.getConfig().getString("prefix")) : "";
-    	    List<String> logs = new ArrayList<>();
     	    StringBuilder sqlBuilder = new StringBuilder("SELECT * FROM watchlogs_logs WHERE 1 = 1");
     	    String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.server-name") : "undefined";
     	    boolean authorizeMultiServerResearch = plugin.getConfig().getBoolean("multi-server.enable-log-research-in-multiserver") && !serverName.equals("undefined");
@@ -774,39 +703,48 @@ public class DatabaseManager {
 
     	    String sql = sqlBuilder.toString();
 
-    	    try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
-    	        for(int i = 0; i < parameters.size(); i++) {
-    	            pstmt.setObject(i + 1, parameters.get(i));
-    	        }
+    	    new BukkitRunnable() {
+				@Override
+				public void run() {
+		    	    List<String> logs = new ArrayList<>();
+		    	    try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+		    	        for(int i = 0; i < parameters.size(); i++) {
+		    	            pstmt.setObject(i + 1, parameters.get(i));
+		    	        }
 
-    	        try(ResultSet rs = pstmt.executeQuery()) {
-    	            while(rs.next()) {
-    	                int logId = rs.getInt("id");
-    	                String pseudo = rs.getString("pseudo");
-    	                String action2 = rs.getString("action");
-    	                String location = rs.getString("location");
-    	                String worldName = rs.getString("world");
-    	                String result = rs.getString("result");
-    	                String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
-    	                String server = rs.getString("server") != null ? rs.getString("server") : "Unknow";
-    	                logs.add(prefix + translateString("&cID &7" + logId + "&c | " + pseudo + " : &7" + action2 + " at " + timestamp + "\n"
-    	                		+ prefix + "&cServer Name: &7" + server + "\n"
-    	                        + prefix + "&cWorld Information: &7" + worldName + "(" + location + ") \n"
-    	                        + prefix + "&cOther Information : &7" + result + "\n&7]---------------------------["));
-    	            }
-    	        }
-    	    } catch(SQLException e) {
-    	        e.printStackTrace();
-    	    }
-
-    	    return logs;
+		    	        try(ResultSet rs = pstmt.executeQuery()) {
+		    	            while(rs.next()) {
+		    	                int logId = rs.getInt("id");
+		    	                String pseudo = rs.getString("pseudo");
+		    	                String action2 = rs.getString("action");
+		    	                String location = rs.getString("location");
+		    	                String worldName = rs.getString("world");
+		    	                String result = rs.getString("result");
+		    	                String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
+		    	                String server = rs.getString("server") != null ? rs.getString("server") : "Unknow";
+		    	                logs.add(prefix + translateString("&cID &7" + logId + "&c | " + pseudo + " : &7" + action2 + " at " + timestamp + "\n"
+		    	                		+ prefix + "&cServer Name: &7" + server + "\n"
+		    	                        + prefix + "&cWorld Information: &7" + worldName + "(" + location + ") \n"
+		    	                        + prefix + "&cOther Information : &7" + result + "\n&7]---------------------------["));
+		    	            }
+		    	        }
+		    	    } catch(SQLException e) {
+		    	        e.printStackTrace();
+		    	    }
+		    	    new BukkitRunnable() {
+		    	    	@Override
+		    	    	public void run() {
+		    	    		callback.accept(logs);
+		    	    	}
+		    	    }.runTask(plugin);
+				}	
+    	    }.runTaskAsynchronously(plugin);
     	}
     
-    public List<String> getJsonLogs(
+    public void getJsonLogs(
     	    String world, String player, boolean useRayon, int centerX, int centerY, int centerZ, int radius,
-    	    String action, String resultFilter, String timeFilter, boolean useTimestamp
+    	    String action, String resultFilter, String timeFilter, boolean useTimestamp, Consumer<List<String>> callback
     	) {
-    	    List<String> logs = new ArrayList<>();
     	    StringBuilder sqlBuilder = new StringBuilder("SELECT * FROM watchlogs_logs WHERE 1 = 1");
     	    String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.server-name") : "undefined";
 
@@ -869,48 +807,58 @@ public class DatabaseManager {
 
     	    String sql = sqlBuilder.toString();
 
-    	    try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
-    	        for(int i = 0; i < parameters.size(); i++) {
-    	            pstmt.setObject(i + 1, parameters.get(i));
-    	        }
+    	    new BukkitRunnable() {
 
-    	        try(ResultSet rs = pstmt.executeQuery()) {
-    	            while(rs.next()) {
-    	                int logId = rs.getInt("id");
-    	                String pseudo = rs.getString("pseudo");
-    	                String action2 = rs.getString("action");
-    	                String location = rs.getString("location");
-    	                String worldName = rs.getString("world");
-    	                String result = rs.getString("result");
-    	                String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
+				@Override
+				public void run() {
+		    	    List<String> logs = new ArrayList<>();
+		    	    try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+		    	        for(int i = 0; i < parameters.size(); i++) {
+		    	            pstmt.setObject(i + 1, parameters.get(i));
+		    	        }
 
-    	                JSONObject logJson = new JSONObject();
-    	                logJson.put("id", logId);
-    	                logJson.put("pseudo", pseudo);
-    	                logJson.put("action", action2);
-    	                logJson.put("location", location);
-    	                logJson.put("world", worldName);
-    	                logJson.put("result", result);
-    	                logJson.put("timestamp", timestamp);
-    	                if(!serverName.equals("undefined")) {
-    	                	logJson.put("server", serverName);
-    	                } else {
-    	                	logJson.put("server", "undefined");
-    	                }
+		    	        try(ResultSet rs = pstmt.executeQuery()) {
+		    	            while(rs.next()) {
+		    	                int logId = rs.getInt("id");
+		    	                String pseudo = rs.getString("pseudo");
+		    	                String action2 = rs.getString("action");
+		    	                String location = rs.getString("location");
+		    	                String worldName = rs.getString("world");
+		    	                String result = rs.getString("result");
+		    	                String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
 
-    	                logs.add(logJson.toString());
-    	            }
-    	        }
-    	    } catch(SQLException e) {
-    	        e.printStackTrace();
-    	    }
+		    	                JSONObject logJson = new JSONObject();
+		    	                logJson.put("id", logId);
+		    	                logJson.put("pseudo", pseudo);
+		    	                logJson.put("action", action2);
+		    	                logJson.put("location", location);
+		    	                logJson.put("world", worldName);
+		    	                logJson.put("result", result);
+		    	                logJson.put("timestamp", timestamp);
+		    	                if(!serverName.equals("undefined")) {
+		    	                	logJson.put("server", serverName);
+		    	                } else {
+		    	                	logJson.put("server", "undefined");
+		    	                }
 
-    	    return logs;
+		    	                logs.add(logJson.toString());
+		    	            }
+		    	        }
+		    	    } catch(SQLException e) {
+		    	        e.printStackTrace();
+		    	    }
+		    	    new BukkitRunnable() {
+		    	    	@Override
+		    	    	public void run() {
+		    	    		callback.accept(logs);
+		    	    	}
+		    	    }.runTask(plugin);
+				}	
+    	    }.runTaskAsynchronously(plugin);
     	}
     
     
-    public List<String> getWebJsonLogs(String world, String player, String loca,  String action, String resultFilter, String timeFilter, boolean useTimestamp, boolean canViewLocation, String serverName) {
-        List<String> logs = new ArrayList<>();
+    public void getWebJsonLogs(String world, String player, String loca,  String action, String resultFilter, String timeFilter, boolean useTimestamp, boolean canViewLocation, String serverName, Consumer<List<String>> callback) {
         
         boolean hideLocation = plugin.getConfig().getBoolean("website.hide-coordinates-in-logs") || !canViewLocation;
         StringBuilder sqlBuilder = new StringBuilder("SELECT * FROM watchlogs_logs WHERE 1 = 1");
@@ -959,40 +907,51 @@ public class DatabaseManager {
 
         String sql = sqlBuilder.toString();
 
-        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            for(int i = 0; i < parameters.size(); i++) {
-                pstmt.setObject(i + 1, parameters.get(i));
-            }
+        new BukkitRunnable() {
 
-            try(ResultSet rs = pstmt.executeQuery()) {
-                while(rs.next()) {
-                    int logId = rs.getInt("id");
-                    String pseudo = rs.getString("pseudo");
-                    String action2 = rs.getString("action");
-                    String location = hideLocation ? "Hide by administrator" : rs.getString("location");
-                    String worldName = rs.getString("world");
-                    String result = rs.getString("result");
-                    String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
-                    String server = rs.getString("server");
+			@Override
+			public void run() {
+		        List<String> logs = new ArrayList<>();
+		        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+		            for(int i = 0; i < parameters.size(); i++) {
+		                pstmt.setObject(i + 1, parameters.get(i));
+		            }
 
-                    JSONObject logJson = new JSONObject();
-                    logJson.put("id", logId);
-                    logJson.put("pseudo", pseudo);
-                    logJson.put("action", action2);
-                    logJson.put("location", location);
-                    logJson.put("world", worldName);
-                    logJson.put("result", result);
-                    logJson.put("timestamp", timestamp);
-                    logJson.put("server", server);
+		            try(ResultSet rs = pstmt.executeQuery()) {
+		                while(rs.next()) {
+		                    int logId = rs.getInt("id");
+		                    String pseudo = rs.getString("pseudo");
+		                    String action2 = rs.getString("action");
+		                    String location = hideLocation ? "Hide by administrator" : rs.getString("location");
+		                    String worldName = rs.getString("world");
+		                    String result = rs.getString("result");
+		                    String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
+		                    String server = rs.getString("server");
 
-                    logs.add(logJson.toString());
-                }
-            }
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
+		                    JSONObject logJson = new JSONObject();
+		                    logJson.put("id", logId);
+		                    logJson.put("pseudo", pseudo);
+		                    logJson.put("action", action2);
+		                    logJson.put("location", location);
+		                    logJson.put("world", worldName);
+		                    logJson.put("result", result);
+		                    logJson.put("timestamp", timestamp);
+		                    logJson.put("server", server);
 
-        return logs;
+		                    logs.add(logJson.toString());
+		                }
+		            }
+		        } catch(SQLException e) {
+		            e.printStackTrace();
+		        }
+		        new BukkitRunnable() {
+					@Override
+					public void run() {
+						callback.accept(logs);
+					}    	
+		        }.runTask(plugin);
+			}	
+        }.runTaskAsynchronously(plugin);
     }
 
     public Timestamp calculateTimeThreshold(String timeFilter) {
@@ -1037,87 +996,78 @@ public class DatabaseManager {
 
     public void insertLog(String pseudo, String action, String location, String world, String result) {
 	    String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.server-name") : "undefined";
+	    totalLogs =+ 1;
+	    logs.add(new LogEntry(action, pseudo, location, world, result, Timestamp.from(Instant.now()), serverName));
+
+	    new BukkitRunnable() {
+			
+			@Override
+			public void run() {
+		        if(plugin.getConfig().getBoolean("discord.discord-module-enabled")) {
+		            logToDiscord(pseudo, action, location, world, result, serverName);
+		        }
+			}
+		}.runTaskAsynchronously(plugin);
+    }
+    
+    public void runLogPush() {
+        String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.server-name") : "undefined";
+        String sql = !serverName.equals("undefined") ? "INSERT INTO watchlogs_logs(pseudo, action, location, world, result, timestamp, server) VALUES(?, ?, ?, ?, ?, ?, ?)" :
+            "INSERT INTO watchlogs_logs(pseudo, action, location, world, result, timestamp) VALUES(?, ?, ?, ?, ?, ?)";
+        
         new BukkitRunnable() {
             @Override
             public void run() {
-                String sql = !serverName.equals("undefined") ? "INSERT INTO watchlogs_logs(pseudo, action, location, world, result, timestamp, server) VALUES(?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)" :
-                	"INSERT INTO watchlogs_logs(pseudo, action, location, world, result, timestamp) VALUES(?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
+                List<LogEntry> logsToProcess;      
+                
+                synchronized(logs) {
+                    logsToProcess = new ArrayList<>(logs); 
+                    logs.clear(); 
+                }
+                
                 try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
-                    pstmt.setString(1, pseudo);
-                    pstmt.setString(2, action);
-                    pstmt.setString(3, location);
-                    pstmt.setString(4, world);
-                    pstmt.setString(5, result);
-                    if(!serverName.equals("undefined")) {
-                    	if(action.equals("website-login") || action.equals("website-logout") 
-                    		|| action.equals("website-logs-search") || action.equals("website-register")) {
-                        	pstmt.setString(6, "Unknow (Non-ingame event)");
-                    	} else {
-                        	pstmt.setString(6, serverName);
-                    	}
+                    for(LogEntry entry : logsToProcess) {
+                        pstmt.setString(1, entry.getPlayer());
+                        pstmt.setString(2, entry.getAction());
+                        pstmt.setString(3, entry.getLocation());
+                        pstmt.setString(4, entry.getWorld());
+                        pstmt.setString(5, entry.getResult());
+                        pstmt.setTimestamp(6, entry.getTimestamp());
+                        if(!serverName.equals("undefined")) {
+                            if(entry.getAction().equals("website-login") || entry.getAction().equals("website-logout") 
+                                || entry.getAction().equals("website-logs-search") || entry.getAction().equals("website-register")) {
+                                pstmt.setString(7, "Unknown(Non-ingame event)");
+                            } else {
+                                pstmt.setString(7, serverName);
+                            }
+                        }
+                        pstmt.addBatch();
                     }
-                    pstmt.executeUpdate();
+                    pstmt.executeBatch();
+                    logsToProcess.clear();
                 } catch(SQLException e) {
                     e.printStackTrace();
                 }
-
-                if(plugin.getConfig().getBoolean("log-in-file")) {
-                    logToFile(pseudo, action, location, world, result);
-                }
-
-                if(plugin.getConfig().getBoolean("discord.discord-module-enabled")) {
-                    logToDiscord(pseudo, action, location, world, result, serverName);
-                }
             }
-        }.runTaskAsynchronously(plugin);
+        }.runTaskTimerAsynchronously(plugin, 0L, 50L);
     }
+
     
-    private void logToFile(String pseudo, String action, String location, String world, String result) {
-        SimpleDateFormat todayFileName = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
-        File folder = new File(plugin.getDataFolder(), "logs");
-        File todayFile = new File(folder, todayFileName.format(new java.util.Date()) + ".yml");
-        int logs = 0;
-
-        if(!folder.exists()) {
-            folder.mkdirs();
-        }
-
-        YamlConfiguration config;
-        if(todayFile.exists()) {
-            config = YamlConfiguration.loadConfiguration(todayFile);
-        } else {
-            config = new YamlConfiguration();
-        }
-
-        config.set("[WatchLogs][" + todayFileName.format(new java.util.Date()) + "][" +(getLastLogId() + 1) + "][" + System.currentTimeMillis() + "]", "Action : " + action + "; Player : " + pseudo + "; Information : " + result + "; Location : " + location + "; World : " + world + " .");
-        logs++;
-
-        if(logs >= 1000) {
-            logs = 0;
-            try {
-                config.save(todayFile);
-            } catch(IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
     private void logToDiscord(String pseudo, String action, String location, String world, String result, String serverName) {
         SetupDiscordBot bot = plugin.getDiscordBot();
         if(bot.isBotOnline()) {
             if(isDiscordLogEnable(action)) {
                 if(plugin.getConfig().getBoolean("discord.enable_live_logs") && plugin.getConfig().contains("discord.live_logs_channel_id")) {
-                    bot.sendDirectLogs(getLastLogId() + 1, ActionUtils.getFormattedNameForActions(action), result, pseudo, world, location, action, serverName);
+                    bot.sendDirectLogs(totalLogs + 1, ActionUtils.getFormattedNameForActions(action), result, pseudo, world, location, action, serverName);
                 }
             }
         }
     }
 
-    public List<String> getAllLogs(boolean isWebsiteRequest, boolean canViewLocation) throws SQLException {
+    public void getAllLogs(boolean isWebsiteRequest, boolean canViewLocation, Consumer<List<String>> callback) throws SQLException {
         if(connection == null || connection.isClosed() || !connection.isValid(2)) {
             reconnect(); 
         }
-        List<String> logs = new ArrayList<>();
 
         boolean hideLocation = plugin.getConfig().getBoolean("website.hide-coordinates-in-logs") || !canViewLocation;
         StringBuilder sqlBuilder = new StringBuilder("SELECT * FROM watchlogs_logs");
@@ -1133,112 +1083,149 @@ public class DatabaseManager {
         }
 
         sqlBuilder.append(" ORDER BY id DESC");
+        if(isWebsiteRequest) {
+        	sqlBuilder.append(" LIMIT " + plugin.getConfig().getInt("website.all-request-limit"));
+        }
         String sql = sqlBuilder.toString();
 
-        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            for(int i = 0; i < parameters.size(); i++) {
-                pstmt.setObject(i + 1, parameters.get(i));
-            }
+        new BukkitRunnable() {
+        	
+			@Override
+			public void run() {
+		        List<String> logs = new ArrayList<>();
+		        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+		            for(int i = 0; i < parameters.size(); i++) {
+		                pstmt.setObject(i + 1, parameters.get(i));
+		            }
 
-            try(ResultSet rs = pstmt.executeQuery()) {
-                while(rs.next()) {
-                    int logId = rs.getInt("id");
-                    String pseudo = rs.getString("pseudo");
-                    String action = rs.getString("action");
-                    String location = hideLocation ? "Hide by administrator" : rs.getString("location");
-                    String worldName = rs.getString("world");
-                    String result = rs.getString("result");
-                    String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
-                    String serverName = rs.getString("server");
+		            try(ResultSet rs = pstmt.executeQuery()) {
+		                while(rs.next()) {
+		                    int logId = rs.getInt("id");
+		                    String pseudo = rs.getString("pseudo");
+		                    String action = rs.getString("action");
+		                    String location = hideLocation ? "Hide by administrator" : rs.getString("location");
+		                    String worldName = rs.getString("world");
+		                    String result = rs.getString("result");
+		                    String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
+		                    String serverName = rs.getString("server");
 
-                    JSONObject logJson = new JSONObject();
-                    logJson.put("id", logId);
-                    logJson.put("pseudo", pseudo);
-                    logJson.put("action", action);
-                    logJson.put("location", location);
-                    logJson.put("world", worldName);
-                    logJson.put("result", result);
-                    logJson.put("timestamp", timestamp);
-                    if(serverName != null) {
-                    	logJson.put("server", serverName);
-                    } else {
-                    	logJson.put("server", "undefined");
-                    }
+		                    JSONObject logJson = new JSONObject();
+		                    logJson.put("id", logId);
+		                    logJson.put("pseudo", pseudo);
+		                    logJson.put("action", action);
+		                    logJson.put("location", location);
+		                    logJson.put("world", worldName);
+		                    logJson.put("result", result);
+		                    logJson.put("timestamp", timestamp);
+		                    if(serverName != null) {
+		                    	logJson.put("server", serverName);
+		                    } else {
+		                    	logJson.put("server", "undefined");
+		                    }
 
-                    logs.add(logJson.toString());
-                }
-            }
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
-
-        return logs;
+		                    logs.add(logJson.toString());
+		                }
+		            }
+		        } catch(SQLException e) {
+		            e.printStackTrace();
+		        }
+		        new BukkitRunnable() {
+					@Override
+					public void run() {
+						callback.accept(logs);
+					}	        	
+		        }.runTask(plugin);
+			}
+		}.runTaskAsynchronously(plugin);
     }
     
-    public boolean isBlockInteract(String location, String playerName) {
-	    String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.server-name") : "undefined";
+    public void isBlockInteract(String location, String playerName, Consumer<Boolean> callback) {
+        boolean multiServerEnabled = plugin.getConfig().getBoolean("multi-server.enable");
+        String serverName = multiServerEnabled ? plugin.getConfig().getString("multi-server.server-name") : null;
 
-        String sql = !serverName.equals("undefined") ? "SELECT action FROM watchlogs_logs WHERE location = ? AND pseudo = ? AND server = ? ORDER BY id DESC LIMIT 1"
-        		: "SELECT action FROM watchlogs_logs WHERE location = ? AND pseudo = ? ORDER BY id DESC LIMIT 1";
-        List<Object> parameters = new ArrayList<>();
-        parameters.add(location);
-        parameters.add(playerName);
-        if(!serverName.equals("undefined")) {
-        	parameters.add(serverName);
-        }
-        
-        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            for(int i = 0; i < parameters.size(); i++) {
-                pstmt.setObject(i + 1, parameters.get(i));
-            }
-            
-            try(ResultSet rs = pstmt.executeQuery()) {
-                if(rs.next()) {
-                    String action = rs.getString("action");
-                    return !action.equals("block-break") && !action.equals("block-place");
+        String sql = "SELECT action FROM watchlogs_logs WHERE location = ? AND pseudo = ?" 
+                     +(multiServerEnabled ? " AND server = ?" : "") 
+                     + " ORDER BY id DESC LIMIT 1";
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                boolean result = false;
+
+                try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                    pstmt.setString(1, location);
+                    pstmt.setString(2, playerName);
+                    if(multiServerEnabled) {
+                        pstmt.setString(3, serverName);
+                    }
+
+                    try(ResultSet rs = pstmt.executeQuery()) {
+                        if(rs.next()) {
+                            String action = rs.getString("action");
+                            result = !action.equals("block-break") && !action.equals("block-place");
+                        }
+                    }
+                } catch(SQLException e) {
+                    e.printStackTrace();
                 }
+
+                final boolean finalResult = result;
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        callback.accept(finalResult);
+                    }
+                }.runTask(plugin);
             }
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return false;
+        }.runTaskAsynchronously(plugin);
     }
 
     public void insertJsonLog(int id, String pseudo, String action, String location, String world, String result, String timestamp, boolean forceId, String serverName) {
     	if(!forceId) {
             String sql = "INSERT INTO watchlogs_logs(id, pseudo, action, location, world, result, timestamp, server) VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
-            try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
-                pstmt.setInt(1, id + 1);
-                pstmt.setString(2, pseudo);
-                pstmt.setString(3, action);
-                pstmt.setString(4, location);
-                pstmt.setString(5, world);
-                pstmt.setString(6, result);
-                pstmt.setTimestamp(7, Timestamp.valueOf(timestamp));
-                pstmt.setString(8, serverName);
-                pstmt.executeUpdate();
-            } catch(SQLException e) {
-                e.printStackTrace();
-            }
+            new BukkitRunnable() {
+
+				@Override
+				public void run() {
+		            try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+		                pstmt.setInt(1, id + 1);
+		                pstmt.setString(2, pseudo);
+		                pstmt.setString(3, action);
+		                pstmt.setString(4, location);
+		                pstmt.setString(5, world);
+		                pstmt.setString(6, result);
+		                pstmt.setTimestamp(7, Timestamp.valueOf(timestamp));
+		                pstmt.setString(8, serverName);
+		                pstmt.executeUpdate();
+		            } catch(SQLException e) {
+		                e.printStackTrace();
+		            }
+				}	
+            }.runTaskAsynchronously(plugin);
     	} else {
     		String sql = "INSERT INTO watchlogs_logs(id, pseudo, action, location, world, result, timestamp, server) " +
     	             "VALUES(?, ?, ?, ?, ?, ?, ?, ?) " +
     	             "ON DUPLICATE KEY UPDATE pseudo = VALUES(pseudo), action = VALUES(action), location = VALUES(location), world = VALUES(world), result = VALUES(result), timestamp = VALUES(timestamp)";
 
-    	try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
-    	    pstmt.setInt(1, id);
-    	    pstmt.setString(2, pseudo);
-    	    pstmt.setString(3, action);
-    	    pstmt.setString(4, location);
-    	    pstmt.setString(5, world);
-    	    pstmt.setString(6, result);
-            pstmt.setTimestamp(7, Timestamp.valueOf(timestamp));
-            pstmt.setString(8, serverName);
-    	    pstmt.executeUpdate();
-    	} catch(SQLException e) {
-    	    e.printStackTrace();
-    	   }
+    	new BukkitRunnable() {
+
+			@Override
+			public void run() {
+		    	try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+		    	    pstmt.setInt(1, id);
+		    	    pstmt.setString(2, pseudo);
+		    	    pstmt.setString(3, action);
+		    	    pstmt.setString(4, location);
+		    	    pstmt.setString(5, world);
+		    	    pstmt.setString(6, result);
+		            pstmt.setTimestamp(7, Timestamp.valueOf(timestamp));
+		            pstmt.setString(8, serverName);
+		    	    pstmt.executeUpdate();
+		    	} catch(SQLException e) {
+		    	    e.printStackTrace();
+		    	   }
+		    	}
+			}.runTaskAsynchronously(plugin);  		
     	}
     }
     
@@ -1253,69 +1240,108 @@ public class DatabaseManager {
 		return plugin.getConfig().getBoolean("enable-discord-logs." + logName);
 	}
     
-    public List<String> getLogs(int x, int y, int z, String world, int limit) {
+    public void getLogs(int x, int y, int z, String world, int limit, Consumer<List<String>> callback) {
         String prefix = plugin.getConfig().getBoolean("use-prefix") ? translateString(plugin.getConfig().getString("prefix")) : "";
-        List<String> logs = new ArrayList<>();
-	    String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.server-name") : "undefined";
-        String sql = "SELECT * FROM watchlogs_logs WHERE location = ? AND world = ? AND(action = 'block-place' OR action = 'block-break' OR action = 'block-explosion')" + (serverName.equals("undefined") ? "" : " AND server = ?") + " ORDER BY id DESC LIMIT " + limit;
+        String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.server-name") : "undefined";
 
-        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, x + "/" + y + "/" + z);
-            pstmt.setString(2, world);
-            if(!serverName.equals("undefined")) {
-            	pstmt.setString(3, serverName);
-            }
-            try(ResultSet rs = pstmt.executeQuery()) {
-                while(rs.next()) {
-                    int id = rs.getInt("id");
-                    String pseudo = rs.getString("pseudo");
-                    String action = rs.getString("action");
-                    String location = rs.getString("location");
-                    String worldName = rs.getString("world");
-                    String result = rs.getString("result");
-                    String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
-                    logs.add(prefix + translateString("&cID &7" + id + "&c | " + pseudo + " : &7" + action + " at " + timestamp + "\n"
-                    		+ prefix + "&cWorld Information: &7" + worldName + "(" + location + ") \n"
-                    		+ prefix + "&cOther Information : &7" + result + "\n&7]---------------------------["));
-                    
-                }
-            }
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
-        return logs;
+        String sql = "SELECT id, pseudo, action, location, world, result, timestamp " +
+                     "FROM watchlogs_logs " +
+                     "WHERE location = ? AND world = ? " +
+                     "AND(action = 'block-place' OR action = 'block-break' OR action = 'block-explosion') " +
+                   (serverName.equals("undefined") ? "" : "AND server = ? ") +
+                     "ORDER BY id DESC " +
+                     "LIMIT " + limit;
+        
+        new BukkitRunnable() {
+
+			@Override
+			public void run() {
+		        List<String> logs = new ArrayList<>();
+		        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+		            pstmt.setString(1, x + "/" + y + "/" + z);
+		            pstmt.setString(2, world);
+		            if(!serverName.equals("undefined")) {
+		                pstmt.setString(3, serverName);
+		            }
+
+		            try(ResultSet rs = pstmt.executeQuery()) {
+		                while(rs.next()) {
+		                    int id = rs.getInt("id");
+		                    String pseudo = rs.getString("pseudo");
+		                    String action = rs.getString("action");
+		                    String location = rs.getString("location");
+		                    String worldName = rs.getString("world");
+		                    String result = rs.getString("result");
+		                    String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
+
+		                    logs.add(prefix + translateString("&cID &7" + id + "&c | " + pseudo + " : &7" + action + " at " + timestamp + "\n"
+		                            + prefix + "&cWorld Information: &7" + worldName + "(" + location + ") \n"
+		                            + prefix + "&cOther Information : &7" + result + "\n&7]---------------------------["));
+		                }
+		            }
+		        } catch(SQLException e) {
+		            e.printStackTrace();
+		        }
+		        new BukkitRunnable() {
+					@Override
+					public void run() {
+						callback.accept(logs);
+					}     	
+		        }.runTask(plugin);
+			}	
+        }.runTaskAsynchronously(plugin);
     }
-    
-    public List<String> getContainerLogs(int x, int y, int z, String world) {
-        String prefix = plugin.getConfig().getBoolean("use-prefix") ? translateString(plugin.getConfig().getString("prefix")) : "";
-        List<String> logs = new ArrayList<>();
-	    String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.server-name") : "undefined";
-        String sql = "SELECT * FROM watchlogs_logs WHERE location = ? AND world = ? AND(action = 'container-transaction' OR action = 'container-open')" + (serverName.equals("undefined") ? "" :  "AND server = ?") + " ORDER BY id DESC";
 
-        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, x + "/" + y + "/" + z);
-            pstmt.setString(2, world);
-            if(!serverName.equals("undefined")) {
-            	pstmt.setString(3, serverName);
-            }
-            try(ResultSet rs = pstmt.executeQuery()) {
-                while(rs.next()) {
-                    int id = rs.getInt("id");
-                    String pseudo = rs.getString("pseudo");
-                    String action = rs.getString("action");
-                    String location = rs.getString("location");
-                    String worldName = rs.getString("world");
-                    String result = rs.getString("result");
-                    String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
-                    logs.add(prefix + translateString("&cID &7" + id + "&c | " + pseudo + " : &7" + action + " at " + timestamp + "\n"
-                    		+ prefix + "&cWorld Information: &7" + worldName + "(" + location + ") \n"
-                    		+ prefix + "&cOther Information : &7" + result + "\n&7]---------------------------["));
-                }
-            }
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
-        return logs;
+    
+    public void getContainerLogs(int x, int y, int z, String world, Consumer<List<String>> callback) {
+        String prefix = plugin.getConfig().getBoolean("use-prefix") ? translateString(plugin.getConfig().getString("prefix")) : "";
+        String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.server-name") : "undefined";
+
+        String sql = "SELECT id, pseudo, action, location, world, result, timestamp " +
+                     "FROM watchlogs_logs " +
+                     "WHERE location = ? AND world = ? " +
+                     "AND(action = 'container-transaction' OR action = 'container-open') " +
+                   (serverName.equals("undefined") ? "" : "AND server = ? ") +
+                     "ORDER BY id DESC";
+
+        new BukkitRunnable() {
+
+			@Override
+			public void run() {
+		        List<String> logs = new ArrayList<>();
+		        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
+		            pstmt.setString(1, x + "/" + y + "/" + z);
+		            pstmt.setString(2, world);
+		            if(!serverName.equals("undefined")) {
+		                pstmt.setString(3, serverName);
+		            }
+
+		            try(ResultSet rs = pstmt.executeQuery()) {
+		                while(rs.next()) {
+		                    int id = rs.getInt("id");
+		                    String pseudo = rs.getString("pseudo");
+		                    String action = rs.getString("action");
+		                    String location = rs.getString("location");
+		                    String worldName = rs.getString("world");
+		                    String result = rs.getString("result");
+		                    String timestamp = String.valueOf(rs.getTimestamp("timestamp"));
+
+		                    logs.add(prefix + translateString("&cID &7" + id + "&c | " + pseudo + " : &7" + action + " at " + timestamp + "\n"
+		                            + prefix + "&cWorld Information: &7" + worldName + "(" + location + ") \n"
+		                            + prefix + "&cOther Information : &7" + result + "\n&7]---------------------------["));
+		                }
+		            }
+		        } catch(SQLException e) {
+		            e.printStackTrace();
+		        }
+		        new BukkitRunnable() {
+					@Override
+					public void run() {
+						callback.accept(logs);
+					} 	
+		        }.runTask(plugin);
+			}	
+        }.runTaskAsynchronously(plugin);
     }
     
     public String getLocationOfId(int id) {

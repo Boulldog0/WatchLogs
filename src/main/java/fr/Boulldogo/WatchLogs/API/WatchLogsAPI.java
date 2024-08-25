@@ -1,8 +1,5 @@
 package fr.Boulldogo.WatchLogs.API;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -82,7 +79,9 @@ public class WatchLogsAPI {
 		if(plugin.getConfig().getBoolean("allow-external-actions")) {	
 	        if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
 	        	ItemDataSerializer dataSerializer = new ItemDataSerializer(plugin);
-	        	dbManager.addItemEntry(dataSerializer.serializeItemStack(item), false, -1);
+	        	dataSerializer.serializeItemStack(item, stack -> {
+	        		dbManager.addItemEntry(stack, false, -1);
+	        	});
 	        }
 		} 
 	}

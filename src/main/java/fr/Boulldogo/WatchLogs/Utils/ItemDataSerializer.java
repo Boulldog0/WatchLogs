@@ -15,10 +15,12 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class ItemDataSerializer {
 
@@ -35,9 +37,20 @@ public class ItemDataSerializer {
     	return plugin.getSpigotVersionAsInt() >= 1130;
     }
 
-    public String serializeItemStack(ItemStack itemStack) {
-        ItemData itemData = new ItemData(itemStack);
-        return gson.toJson(itemData);
+    public void serializeItemStack(ItemStack itemStack, Consumer<String> callback) {
+    	new BukkitRunnable() {
+
+			@Override
+			public void run() {
+		        ItemData itemData = new ItemData(itemStack);
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        callback.accept(gson.toJson(itemData));
+                    }
+                }.runTask(plugin);
+			}	
+    	}.runTaskAsynchronously(plugin);
     }
 
     public ItemStack deserializeItemStack(String json) {
@@ -96,20 +109,19 @@ public class ItemDataSerializer {
             }
         }
 
-        public ItemStack toItemStack() {
+        @SuppressWarnings("deprecation")
+		public ItemStack toItemStack() {
             Material material = Material.getMaterial(type);
             if(material == null) {
                 return new ItemStack(Material.AIR);
             }
 
-            @SuppressWarnings("deprecation")
             ItemStack itemStack = new ItemStack(material, amount, durability);
             ItemMeta meta = itemStack.getItemMeta();
             if(meta != null) {
                 meta.setDisplayName(displayName);
                 meta.setLore(java.util.Arrays.asList(lore));
                 for(Map.Entry<String, Integer> entry : enchantments.entrySet()) {
-                    @SuppressWarnings("deprecation")
                     Enchantment enchantment = Enchantment.getByName(entry.getKey());
                     if(enchantment != null) {
                         meta.addEnchant(enchantment, entry.getValue(), true);

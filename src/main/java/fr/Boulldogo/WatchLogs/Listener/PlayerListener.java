@@ -20,9 +20,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        Player player = event.getPlayer();
-        plugin.removePlayerSession(player);
-        
+        Player player = event.getPlayer();   
         WebUtils webUtils = plugin.getWebUtils();
         
         if(webUtils.isPlayerExists(player)) {

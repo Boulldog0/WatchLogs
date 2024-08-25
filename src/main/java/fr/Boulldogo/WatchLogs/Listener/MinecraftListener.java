@@ -30,7 +30,9 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
@@ -42,7 +44,6 @@ import fr.Boulldogo.WatchLogs.Events.TracedItemActionEvent;
 import fr.Boulldogo.WatchLogs.Utils.ItemDataSerializer;
 import fr.Boulldogo.WatchLogs.Utils.MaterialUtils;
 import fr.Boulldogo.WatchLogs.Utils.TraceItemUtils;
-import net.md_5.bungee.api.ChatColor;
 
 @SuppressWarnings("deprecation")
 public class MinecraftListener implements Listener {
@@ -124,7 +125,7 @@ public class MinecraftListener implements Listener {
 	    if(e.isCancelled()) return;
 	    Inventory inventory = e.getInventory();
 	    Player player =(Player) e.getPlayer();
-	    if(isContainer(inventory) && !databaseManager.isToolEnabled(player.getName())) {
+	    if(isContainer(inventory) && !plugin.getPlayerSession(player).isSessionActive()) {
 	        if(isLogEnable("container-open")) {
 	            Location location = e.getPlayer().getLocation();
 	            String inventoryType = getContainerName(inventory.getType());
@@ -159,38 +160,44 @@ public class MinecraftListener implements Listener {
 
 	@EventHandler
 	public void onInventoryClick(InventoryClickEvent event) {
-	    if(event.isCancelled()) return;
-	    if(event.getClickedInventory() == null) return;
-	    if(event.getWhoClicked() instanceof Player) {
-	        Player player =(Player) event.getWhoClicked();
-	        Inventory clickedInventory = event.getClickedInventory();
-	        Inventory topInventory = event.getView().getTopInventory();
-	        if(clickedInventory != null && isContainer(topInventory)) {
-	            InventoryAction action = event.getAction();
-	            ItemStack currentItem = event.getCurrentItem();
-	            Location location = event.getInventory().getLocation();
-	            String containerName = getContainerName(topInventory.getType());
-	            String name = event.getView().getTitle();
+		new BukkitRunnable() {
+			
+			@Override
+			public void run() {
+			    if(event.isCancelled()) return;
+			    if(event.getClickedInventory() == null) return;
+			    if(event.getWhoClicked() instanceof Player) {
+			        Player player =(Player) event.getWhoClicked();
+			        Inventory clickedInventory = event.getClickedInventory();
+			        Inventory topInventory = event.getView().getTopInventory();
+			        if(clickedInventory != null && isContainer(topInventory)) {
+			            InventoryAction action = event.getAction();
+			            ItemStack currentItem = event.getCurrentItem();
+			            Location location = event.getInventory().getLocation();
+			            String containerName = getContainerName(topInventory.getType());
+			            String name = event.getView().getTitle();
 
-	            switch(action) {
-	                case MOVE_TO_OTHER_INVENTORY:
-	                case PICKUP_ONE:
-	                case PICKUP_SOME:
-	                case PICKUP_HALF:
-	                case PICKUP_ALL:
-	                case PLACE_ONE:
-	                case PLACE_SOME:
-	                case PLACE_ALL:
-	                case SWAP_WITH_CURSOR:
-	                case HOTBAR_SWAP:
-	                case HOTBAR_MOVE_AND_READD:
-	                    logTransfer(player, currentItem, clickedInventory, topInventory, location, containerName, name);
-	                    break;
-	                default:
-	                    break;
-	            }
-	        }
-	    }
+			            switch(action) {
+			                case MOVE_TO_OTHER_INVENTORY:
+			                case PICKUP_ONE:
+			                case PICKUP_SOME:
+			                case PICKUP_HALF:
+			                case PICKUP_ALL:
+			                case PLACE_ONE:
+			                case PLACE_SOME:
+			                case PLACE_ALL:
+			                case SWAP_WITH_CURSOR:
+			                case HOTBAR_SWAP:
+			                case HOTBAR_MOVE_AND_READD:
+			                    logTransfer(player, currentItem, clickedInventory, topInventory, location, containerName, name);
+			                    break;
+			                default:
+			                    break;
+			            }
+			        }
+			    }
+			}
+		}.runTaskAsynchronously(plugin);
 	}
 
 	private void logTransfer(Player player, ItemStack item, Inventory fromInventory, Inventory toInventory, Location location, String containerName, String name) {
@@ -202,7 +209,9 @@ public class MinecraftListener implements Listener {
 	        databaseManager.insertLog(player.getName(), "container-transaction",(location == null ? "Unknow" : location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ()), player.getWorld().getName(), containerName + ", " + id +(data != 0 ? ":" +  data : "") + "(x" + amount + ")" + " | Container name: " + name);
 	        
 	        if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
-	        	databaseManager.addItemEntry(dataSerializer.serializeItemStack(item), false, -1);
+	        	dataSerializer.serializeItemStack(item, stack -> {
+		        	databaseManager.addItemEntry(stack, false, -1);
+	        	});
 	        }
 	    }    
 	    
@@ -226,30 +235,6 @@ public class MinecraftListener implements Listener {
 	    	}
 	    }
 	}
-
-	private String getContainerName(InventoryType type) {
-		if(type == null) return "Unknow container";
-	    switch(type) {
-	        case CHEST:
-	            return "Chest";
-	        case DISPENSER:
-	            return "Dispenser";
-	        case DROPPER:
-	            return "Dropper";
-	        case FURNACE:
-	            return "Furnace";
-	        case HOPPER:
-	            return "Hopper";
-	        case SHULKER_BOX:
-	            return "Shulker Box";
-	        case BARREL:
-	        	return "Barrel";
-	        case ENDER_CHEST:
-	        	return "Ender Chest";
-	        default:
-	            return "No-Vanilla Container";
-	    }
-	}
     
     @EventHandler
     public void ItemDropEvent(PlayerDropItemEvent e) {
@@ -263,7 +248,9 @@ public class MinecraftListener implements Listener {
 			databaseManager.insertLog(player.getName(), "item-drop", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Item: " + id +(data != 0 ? ":" +  data : ""));
 			
 	        if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
-	        	databaseManager.addItemEntry(dataSerializer.serializeItemStack(e.getItemDrop().getItemStack()), false, -1);
+	        	dataSerializer.serializeItemStack(item, stack -> {
+		        	databaseManager.addItemEntry(stack, false, -1);
+	        	});
 	        }
 		}		
 	    
@@ -300,7 +287,9 @@ public class MinecraftListener implements Listener {
 			databaseManager.insertLog(player.getName(), "item-pickup", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Item: " + id +(data != 0 ? ":" +  data : ""));
 			
 	        if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
-	        	databaseManager.addItemEntry(dataSerializer.serializeItemStack(e.getItem().getItemStack()), false, -1);
+	        	dataSerializer.serializeItemStack(item, stack -> {
+		        	databaseManager.addItemEntry(stack, false, -1);
+	        	});
 	        }
 		}
 		
@@ -336,7 +325,9 @@ public class MinecraftListener implements Listener {
 			databaseManager.insertLog(player.getName(), "item-break", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Item: " + id +(data != 0 ? ":" +  data : ""));
 			
 	        if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
-	        	databaseManager.addItemEntry(dataSerializer.serializeItemStack(e.getBrokenItem()), false, -1);
+	        	dataSerializer.serializeItemStack(item, stack -> {
+		        	databaseManager.addItemEntry(stack, false, -1);
+	        	});
 	        }
 		}	
 		
@@ -374,7 +365,9 @@ public class MinecraftListener implements Listener {
 			if(!e.getDrops().isEmpty()) {
 				for(int i = 0; i < e.getDrops().size(); i++) {
 			        if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
-			        	databaseManager.addItemEntry(dataSerializer.serializeItemStack(e.getDrops().get(i)), true, deathId);
+			        	dataSerializer.serializeItemStack(e.getDrops().get(i), stack -> {
+				        	databaseManager.addItemEntry(stack, true, deathId);
+			        	});
 			        }
 			        boolean rebornSystem = plugin.getConfig().getBoolean("use-item-reborn-system");
 					String id = e.getDrops().get(i).getType().toString();
@@ -449,50 +442,23 @@ public class MinecraftListener implements Listener {
         Player player = e.getPlayer();
         ItemStack stack = e.getItem();
         Block block = e.getClickedBlock();
+        if(stack == null && block == null) return;
         Action action = e.getAction(); 
         Location location = e.getClickedBlock().getLocation();
         
-         if(block != null && block.getType() != Material.AIR &&(action == Action.LEFT_CLICK_BLOCK || action == Action.RIGHT_CLICK_BLOCK)) {
-             if(isLogEnable("interact-block") && materialUtils.isBlockActivated(materialUtils.getBlockName(block)) && databaseManager.isBlockInteract(location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getName())) {
-                 String id = materialUtils.getBlockName(block);
-                 int data = block.getData();
-                 databaseManager.insertLog(player.getName(), "interact-block", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(), "Block ID: " + id +(data != 0 ? ":" +  data : ""));
+         if(block != null && block.getType() != Material.AIR && (action == Action.LEFT_CLICK_BLOCK || action == Action.RIGHT_CLICK_BLOCK)) {
+        	 if(materialUtils.getBlockName(block).equals("AIR")) return;
+             if(isLogEnable("interact-block") && materialUtils.isBlockActivated(materialUtils.getBlockName(block))) {
+            	 databaseManager.isBlockInteract(location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getName(), result -> {
+                     String id = materialUtils.getBlockName(block);
+                     int data = block.getData();
+                     databaseManager.insertLog(player.getName(), "interact-block", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(), "Block ID: " + id +(data != 0 ? ":" +  data : ""));
+            	 });
              }
          }
         
         if(stack != null) {
-        	if(action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK || action == Action.RIGHT_CLICK_BLOCK || action == Action.LEFT_CLICK_BLOCK) {
-                if(isLogEnable("interact-item") && materialUtils.isItemActivated(materialUtils.getItemName(stack))) {
-                    Location location2 = player.getLocation();
-        			String id = materialUtils.getItemName(stack);
-                    int data = getItemData(stack);
-                    databaseManager.insertLog(player.getName(), "interact-item", location2.getBlockX() + "/" + location2.getBlockY() + "/" + location2.getBlockZ(), player.getWorld().getName(), "Item: " + id +(data != 0 ? ":" +  data : ""));
-                }
-                
-        	    if(plugin.getConfig().getBoolean("trace-item.enable")) {
-        	    	if(tiu.hasTag(stack)) {
-        	    		String UUID = tiu.getWltiTagValue(stack);
-        	    		String serverName = plugin.getConfig().getBoolean("multi-server.enable") ? plugin.getConfig().getString("multi-server.servername") : "Unknow (Multi Server Disable)";
-        	    		TracedItemActionEvent event = new TracedItemActionEvent(player, stack, UUID, serverName, databaseManager.getLastLogId(), location);
-        	    		Bukkit.getServer().getPluginManager().callEvent(event);
-        	    		if(databaseManager.UUIDExists(UUID)) {
-        	    			String logString = "";
-        					try {
-        						logString = databaseManager.getActionString(UUID);
-        					} catch (SQLException e1) {
-        						e1.printStackTrace();
-        					}
-        	    			databaseManager.setItemStringLog(UUID, logString + "," + databaseManager.getLastLogId());
-        	    		} else {
-        	    			databaseManager.registerFirstItemLog(UUID, databaseManager.getLastLogId());
-        	    		}
-        	    	}
-        	    }
-        	}
-        }
-        
-        if(action == Action.LEFT_CLICK_AIR) {
-        	if(stack != null) {
+        	if(action == Action.LEFT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK || action == Action.RIGHT_CLICK_AIR) {
                 if(isLogEnable("interact-item") && materialUtils.isItemActivated(materialUtils.getItemName(stack))) {
                     Location location2 = player.getLocation();
         			String id = materialUtils.getItemName(stack);
@@ -533,11 +499,48 @@ public class MinecraftListener implements Listener {
 			Location location = player.getLocation();
 			databaseManager.insertLog(player.getName(), "interact-entity", location.getBlockX() + "/" + location.getBlockY() + "/" + location.getBlockZ(), player.getWorld().getName(),"Entity name: " + entity.getName() + "(ID: " + entity.getEntityId() + ")");
     	}
+    }  
+    
+    public ItemStack createLogBlock() {
+        String id = plugin.getConfig().getString("block-tool.id");
+
+        Material material = Material.getMaterial(id);
+        ItemStack stack = new ItemStack(material);
+        ItemMeta meta = stack.getItemMeta();
+        if(meta != null) {
+            stack.setItemMeta(meta);
+        }
+        return stack;
     }
+
+	private String getContainerName(InventoryType type) {
+		if(type == null) return "Unknow container";
+	    switch(type) {
+	        case CHEST:
+	            return "Chest";
+	        case DISPENSER:
+	            return "Dispenser";
+	        case DROPPER:
+	            return "Dropper";
+	        case FURNACE:
+	            return "Furnace";
+	        case HOPPER:
+	            return "Hopper";
+	        case SHULKER_BOX:
+	            return "Shulker Box";
+	        case BARREL:
+	        	return "Barrel";
+	        case ENDER_CHEST:
+	        	return "Ender Chest";
+	        default:
+	            return "No-Vanilla Container";
+	    }
+	}
     
     private boolean isLogResearch(Player player) {
         String id = plugin.getConfig().getString("block-tool.id");
-    	return databaseManager.isToolEnabled(player.getName()) && String.valueOf(player.getItemInHand().getType()).equals(id);
+        if(!plugin.getPlayerSession(player).isSessionActive()) return false;
+    	return String.valueOf(player.getItemInHand().getType()).equals(id);
     }
 
     private boolean isContainer(Inventory inventory) {

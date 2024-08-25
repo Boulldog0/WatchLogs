@@ -26,12 +26,6 @@ sqlite:
  #[EN] Language file to be used for messages. [FR] Fichier de langue à utiliser pour les messages.
  #[EN] Available languages : US (English US) or FR (French). [FR] Languages disponibles : US (Anglais américain) ou FR (Français)
 lang_file: US
-#[EN] Enable or disable logging to file. [FR] Activer ou désactiver la journalisation dans un fichier.
-log-in-file: false
-#[EN] Enable automatic deletion of old log archives. [FR] Activer la suppression automatique des anciens fichiers de log.
-delete-old-archives: true
- #[EN] Number of days before old log files are deleted. [FR] Nombre de jours avant que les anciens fichiers de log soient supprimés.
-yml-log-file-archive-delete: 7
 #[EN] Disable automatic deletion of database logs. [FR] Désactiver la suppression automatique des logs de la base de données.
 delete-database-log: false 
 #[EN] Number of days before old database logs are deleted. [FR] Nombre de jours avant que les anciennes logs de la base de données soient supprimés.
@@ -130,6 +124,7 @@ website:
    enable_2fa: true
    2fa_codes_length: 8
    2fa_codes_expiration: 300
+   all-request-limit: 20000
    
 #[EN] If you use the register whitelist, set here the names of players allows to register. [FR] Si vous utiliser la whitelist d'enregistrement, mettez ici le nom des joueurs autorisés à s'enregistrer.
 website-register-whitelist:

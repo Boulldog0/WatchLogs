@@ -10,6 +10,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
@@ -324,9 +325,11 @@ public class WebServer {
             PermissionChecker permissionChecker = plugin.getPermissionChecker();
             boolean canViewLocation = permissionChecker.hasPermission(username, "watchlogs.website.view_location");
             
-            List<String> logs = databaseManager.getAllLogs(true, canViewLocation);    	
+            CompletableFuture<List<String>> futureLogs = getAllLogsAsync(canViewLocation);
+            List<String> allLogs = futureLogs.join(); 
+
             res.type("application/json");
-            return new Gson().toJson(logs);
+            return new Gson().toJson(allLogs);
         });
         
         get("/logs/limit",(req, res) -> {
@@ -412,8 +415,9 @@ public class WebServer {
             
             PermissionChecker permissionChecker = plugin.getPermissionChecker();
             boolean canViewLocation = permissionChecker.hasPermission(username, "watchlogs.website.view_location");
-
-            List<String> filteredLogs = databaseManager.getWebJsonLogs(world, player, location, action, resultFilter, timeFilter, useTimestamp, canViewLocation, serverName);
+            
+            CompletableFuture<List<String>> futureLogs = getLogsAsync(world, player, location, action, resultFilter, timeFilter, useTimestamp, canViewLocation, serverName);
+            List<String> filteredLogs = futureLogs.join(); 
 
             res.type("application/json");
             return new Gson().toJson(filteredLogs);
@@ -631,5 +635,21 @@ public class WebServer {
         } catch(Exception e) {
             return false;
         }
+    }
+    
+    public CompletableFuture<List<String>> getLogsAsync(String world, String player, String location, String action, String resultFilter, String timeFilter, boolean useTimestamp, boolean canViewLocation, String serverName) {
+        CompletableFuture<List<String>> future = new CompletableFuture<>();
+        databaseManager.getWebJsonLogs(world, player, location, action, resultFilter, timeFilter, useTimestamp, canViewLocation, serverName, future::complete);
+        return future;
+    }
+    
+    public CompletableFuture<List<String>> getAllLogsAsync(boolean canViewLocation) {
+        CompletableFuture<List<String>> future = new CompletableFuture<>();
+        try {
+			databaseManager.getAllLogs(true, canViewLocation, future::complete);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+        return future;
     }
 }

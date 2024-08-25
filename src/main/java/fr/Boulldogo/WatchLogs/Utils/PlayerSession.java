@@ -2,13 +2,17 @@ package fr.Boulldogo.WatchLogs.Utils;
 
 import java.util.List;
 
+import org.bukkit.OfflinePlayer;
+
 public class PlayerSession {
     private String blockLocation;
+    private OfflinePlayer player;
     private int currentPage;
     private boolean toolLog;
     private List<String> currentLogs;
     private int limit;
     private int toolLimit;
+    private boolean isActive;
 
     public PlayerSession() {
         this.currentPage = 1;
@@ -16,6 +20,14 @@ public class PlayerSession {
     
     public int getToolLimit() {
     	return toolLimit;
+    }
+    
+    public void setPlayer(OfflinePlayer player) {
+    	this.player = player;
+    }
+    
+    public OfflinePlayer getPlayer() {
+    	return player;
     }
     
     public void setToolLimit(int limit) {
@@ -64,5 +76,13 @@ public class PlayerSession {
     
     public void setToolLog(boolean isToolLog) {
     	this.toolLog = isToolLog;
+    }
+    
+    public boolean isSessionActive() {
+    	return isActive;
+    }
+    
+    public void setSessionActivity(boolean isActive) {
+    	this.isActive = isActive;
     }
 }

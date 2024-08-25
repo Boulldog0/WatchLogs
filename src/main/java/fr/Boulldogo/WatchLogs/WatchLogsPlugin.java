@@ -1,23 +1,18 @@
 package fr.Boulldogo.WatchLogs;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import javax.security.auth.login.LoginException;
 
@@ -26,7 +21,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -50,9 +44,7 @@ public class WatchLogsPlugin extends JavaPlugin {
 	private boolean isUpToDate = true;
 	public DatabaseManager databaseManager;
     private SetupDiscordBot discordBot;
-    @SuppressWarnings("unused")
     private YamlConfiguration lang;
-    @SuppressWarnings("unused")
 	private String bukkitVersion;
     private MaterialUtils materialUtils;
     private ItemDataSerializer dataSerializer;
@@ -60,7 +52,6 @@ public class WatchLogsPlugin extends JavaPlugin {
     private WebUtils webUtils;
     private Random random = new Random();
     private PermissionChecker permissionChecker; 
-    private ServerUtils serverUtils;
     private TraceItemUtils traceItemUtils;
     private static WatchLogsPlugin plugin;
 	private final List<String> servers = new ArrayList<>();
@@ -102,7 +93,6 @@ public class WatchLogsPlugin extends JavaPlugin {
 	    
 	    this.materialUtils = new MaterialUtils(this);
 	    this.dataSerializer = new ItemDataSerializer(this);
-	    this.serverUtils = new ServerUtils(this);
 	    this.A2fUtils = new A2FUtils(this);
 	    WatchLogsPlugin.plugin = this;
 	    
@@ -157,16 +147,23 @@ public class WatchLogsPlugin extends JavaPlugin {
 			    this.databaseManager = new DatabaseManager(url, username, password, this.getLogger(), useMySQLDatabase, this, dataSerializer);
 		        databaseManager.connect();
 		    }
-		
-		if(this.getConfig().getBoolean("discord.discord-module-enabled")) {
-	        discordBot = new SetupDiscordBot(this, databaseManager);
-	        try {
-	            discordBot.startBot();
-	        } catch (LoginException e) {
-	            getLogger().severe("Failed to login to Discord: " + e.getMessage());
-	        }
+
+		if (this.getConfig().getBoolean("discord.discord-module-enabled")) {
+		    discordBot = new SetupDiscordBot(plugin, databaseManager);
+
+		    new BukkitRunnable() {
+		        @Override
+		        public void run() {
+		            try {
+		                discordBot.startBot();
+		                getLogger().info("Discord bot started successfully.");
+		            } catch (LoginException e) {
+		                getLogger().severe("Failed to login to Discord: " + e.getMessage());
+		            }
+		        }
+		    }.runTaskAsynchronously(this);
 		} else {
-			this.getLogger().warning("[Discord-Module] Discord Bot Module are disabled. No bot started with plugin.");
+		    this.getLogger().warning("[Discord-Module] Discord Bot Module is disabled. No bot started with the plugin.");
 		}
 		
 		if (this.getConfig().getBoolean("website.enable_website_module")) {
@@ -209,36 +206,21 @@ public class WatchLogsPlugin extends JavaPlugin {
 		    getLogger().warning("[Web-Module] Web module is disabled. No web server started.");
 		}
 		
-		if(this.getConfig().getBoolean("log-in-file")) {
-            SimpleDateFormat todayFileName = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
-			
-			File folder = new File(this.getDataFolder(), "logs");
-			File todayFile = new File(folder, todayFileName.toString() + ".yml");
-			File ancientFolder = new File(folder, "archives");
-			if(!folder.exists()) {
-				folder.mkdirs();
-			}
-			if(!ancientFolder.exists()) {
-				ancientFolder.mkdirs();
-			}
-			if(!todayFile.exists()) {
-				try {
-					todayFile.createNewFile();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-			runSaveLogFile();
-		}
-		
 		File importFolder = new File(this.getDataFolder(), "import");
 		
 		if(!importFolder.exists()) {
 			importFolder.mkdir();
 		}
 		
-        GithubVersion versionChecker = new GithubVersion(this);
-        versionChecker.checkForUpdates();
+		new BukkitRunnable() {
+
+			@Override
+			public void run() {
+		        GithubVersion versionChecker = new GithubVersion(plugin);
+		        versionChecker.checkForUpdates();
+			}
+		}.runTaskAsynchronously(this);
+		
 	    this.jsonDatabase = new JsonDatabase(this, databaseManager);
 	    this.traceItemUtils = new TraceItemUtils(this, databaseManager);
 		
@@ -254,31 +236,10 @@ public class WatchLogsPlugin extends JavaPlugin {
 		
 		long finalTime = System.currentTimeMillis() - ms;
 		this.getLogger().info("==================[Enable WatchLogs finished in " + finalTime + "ms]==================");
+		return;
 	}
 	
 	public void onDisable() {	
-        if(this.getConfig().getBoolean("log-in-file")) {
-            SimpleDateFormat todayFileName = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
-            File folder = new File(this.getDataFolder(), "logs");
-            File todayFile = new File(folder, todayFileName.toString() + ".yml");
-
-            if(!folder.exists()) {
-                folder.mkdirs();
-            }
-
-            YamlConfiguration config;
-            if(todayFile.exists()) {
-                config = YamlConfiguration.loadConfiguration(todayFile);
-            } else {
-                config = new YamlConfiguration();
-            }
-            
-            try {
-				config.save(todayFile);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-        }
 		this.getLogger().info("                                         \r\n"
 				+ " __    __      _       _       __               \r\n"
 				+ "/ / /\\ \\ \\__ _| |_ ___| |__   / /  ___   __ _ ___ \r\n"
@@ -289,12 +250,11 @@ public class WatchLogsPlugin extends JavaPlugin {
 		String version = this.getDescription().getVersion();
 		this.getLogger().info("Plugin WatchLogs v" + version + " by Boulldogo unloaded correctly !");
 		
-		databaseManager.markServerOffline();
-		
         if(discordBot != null && discordBot.getJDA() != null) {
             discordBot.getJDA().shutdown();
             getLogger().info("Discord bot shut down.");
         }
+        return;
 	}
 	
 	public String getVersion() {
@@ -354,10 +314,6 @@ public class WatchLogsPlugin extends JavaPlugin {
 		return discordBot;
 	}
 	
-	public ServerUtils getServerUtils() {
-		return serverUtils;
-	}
-	
 	public TraceItemUtils getTraceItemUtils() {
 		return traceItemUtils;
 	}
@@ -368,37 +324,6 @@ public class WatchLogsPlugin extends JavaPlugin {
 	
 	public WebServer getWebServer() {
 		return webServer;
-	}
-	
-	private void runSaveLogFile() {
-		new BukkitRunnable() {
-			
-			@Override
-			public void run() {
-		        if(getConfig().getBoolean("log-in-file")) {
-		            SimpleDateFormat todayFileName = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
-		            File folder = new File(getDataFolder(), "logs");
-		            File todayFile = new File(folder, todayFileName.toString() + ".yml");
-
-		            if(!folder.exists()) {
-		                folder.mkdirs();
-		            }
-
-		            YamlConfiguration config;
-		            if(todayFile.exists()) {
-		                config = YamlConfiguration.loadConfiguration(todayFile);
-		            } else {
-		                config = new YamlConfiguration();
-		            }
-
-		            try {
-		                config.save(todayFile);
-		            } catch (IOException e) {
-		                e.printStackTrace();
-		            }
-		        }
-			}
-		}.runTaskTimer(this, 0, 1200L);
 	}
 	
 	public boolean isVersionLessThanOrEqual(String versionToCompare) {
@@ -463,7 +388,9 @@ public class WatchLogsPlugin extends JavaPlugin {
     }
 
     public void removePlayerSession(Player player) {
-        playerSessions.remove(player);
+    	if(playerSessions.containsKey(player)) {
+            playerSessions.remove(player);
+    	}
     }
 	
 	public void runFileVerification() {
@@ -472,94 +399,15 @@ public class WatchLogsPlugin extends JavaPlugin {
 			public void run() {
 				Calendar calendar = Calendar.getInstance();
 				if(calendar.get(Calendar.HOUR) == 0 && calendar.get(Calendar.MINUTE) == 0) {
-					runSaveFile();
-					runDeleteFile();
+					runDeleteDatabase();
 				}
 			}
-		}.runTaskTimer(this, 0, 1200);
+		}.runTaskTimerAsynchronously(plugin, 0, 1200L);
 	}
 	
-	private void runSaveFile() {
-        SimpleDateFormat todayFileName = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
-        
-        Calendar calendar = Calendar.getInstance();
-
-        calendar.add(Calendar.DAY_OF_MONTH, -1);
-        Date previousDay = calendar.getTime();
-        SimpleDateFormat yesFileName = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
-        String yesterdayFileName = yesFileName.format(previousDay).toString();
-
-	    File folder = new File(this.getDataFolder(), "logs");
-	    File todayFile = new File(folder, todayFileName.toString());
-	    File yesterdayFile = new File(folder, yesterdayFileName);
-	    File ancientFolder = new File(folder, "archives");
-
-	    if(!ancientFolder.exists()) {
-	        ancientFolder.mkdirs();
-	    }
-
-	    if(yesterdayFile.exists()) {
-	        String zipFileName = yesterdayFileName.replace(".yml", ".zip");
-	        File zipFile = new File(ancientFolder, zipFileName);
-	        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile));
-	             FileInputStream fis = new FileInputStream(yesterdayFile)) {
-	            zos.putNextEntry(new ZipEntry(yesterdayFileName));
-	            byte[] buffer = new byte[1024];
-	            int length;
-	            while ((length = fis.read(buffer)) > 0) {
-	                zos.write(buffer, 0, length);
-	            }
-	            zos.closeEntry();
-	            if(yesterdayFile.delete()) {
-	                getLogger().info("Logs of day correctly saved and moove in: " + yesterdayFileName);
-	            } else {
-	                getLogger().warning("Failed to save log file: " + yesterdayFileName);
-	            }
-	        } catch (IOException e) {
-	            e.printStackTrace();
-	        }
-	    }
-
-	    if(!todayFile.exists()) {
-	        try {
-	            if(todayFile.createNewFile()) {
-	                getLogger().info("Created new day log file: " + todayFileName);
-	            } else {
-	                getLogger().warning("Failed to create new day log file: " + todayFileName);
-	            }
-	        } catch (IOException e) {
-	            e.printStackTrace();
-	        }
-	    }
-	}
-	
-	private void runDeleteFile() {
-		int daysToKeep = this.getConfig().getInt("yml-log-file-archive-delete");
+	private void runDeleteDatabase() {
 		int daysToKeepDb = this.getConfig().getInt("database-log-delete");
-	    File folder = new File(this.getDataFolder(), "logs/archives");
-	    if(!folder.exists() || !folder.isDirectory()) {
-	        return;
-	    }
 
-	    File[] files = folder.listFiles();
-	    if(files == null) {
-	        return;
-	    }
-
-	    long cutoffTime = System.currentTimeMillis() - (daysToKeep * 24 * 60 * 60 * 1000L);
-
-	    if(this.getConfig().getBoolean("delete-old-archives")) {
-		    for (File file : files) {
-		        if(file.isFile() && file.lastModified() < cutoffTime) {
-		            if(file.delete()) {
-		                getLogger().info("Deleted old archive: " + file.getName());
-		            } else {
-		                getLogger().warning("Failed to delete old archive: " + file.getName());
-		            }
-		        }
-		    }
-	    }
-	    
 	    if(this.getConfig().getBoolean("delete-database-log")) {
 	         databaseManager.clearOldData(daysToKeepDb);
 	    }
