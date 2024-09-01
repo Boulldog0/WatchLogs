@@ -1,6 +1,5 @@
 package fr.Boulldogo.WatchLogs.Listener;
 
-import java.util.List;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -44,7 +43,8 @@ public class ToolListener implements Listener {
         String prefix = plugin.getConfig().getBoolean("use-prefix") ? translateString(plugin.getConfig().getString("prefix")) : "";
         Player player = e.getPlayer();
         Block block = e.getBlockPlaced();
-        ItemStack itemInHand = player.getItemInHand();
+        @SuppressWarnings("deprecation")
+		ItemStack itemInHand = player.getItemInHand();
 
         String id = plugin.getConfig().getString("block-tool.id");
         

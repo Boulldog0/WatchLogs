@@ -3,7 +3,7 @@ use-prefix: true
  #[EN] Customizable prefix for log messages. [FR] Préfixe personnalisable pour les messages de log.
 prefix: "&7[&bWatchLogs&7] "
 #[EN] Set to true to use MySQL for data storage. Set to false to use sqlite for data storage. [FR] Définir sur true pour utiliser MySQL pour le stockage des données. Définir sur false pour utiliser sqlite pour le stockage des données.
-use-mysql: true
+use-mysql: false
 
 #[EN] MySQL database connection settings. Useless of touch it if you use sqlite.[FR] Paramètres de connexion à la base de données MySQL. Inutile de toucher à cela si vous utilisez sqlite.
 mysql:

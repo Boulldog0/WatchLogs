@@ -1,10 +1,13 @@
 package fr.Boulldogo.WatchLogs.Database;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import javax.annotation.Nullable;
@@ -12,7 +15,6 @@ import javax.annotation.Nullable;
 import org.bukkit.ChatColor;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.Consumer;
 import org.json.JSONObject;
 
 import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
@@ -46,38 +48,68 @@ public class DatabaseManager {
     }
 
     public void connect() {
-    	new BukkitRunnable() {
-			@Override
-			public void run() {
-		        try {
-		            if(connection != null && !connection.isClosed()) {
-		                return;
-		            }
-		            if(useMysql) {
-		                connection = DriverManager.getConnection(url, username, password);
-		                logger.info("Connected to the MySQL database.");
-		            } else {
-		                connection = DriverManager.getConnection(url);
-		                logger.info("Connected to the SQLite database.");
-		            }
-		            createTableIfNotExists();
-		            addColumnIfNotExists();
-		            maintainConnection();
-		            runLogPush();
-		            totalLogs = getLastLogId();
-		            if(plugin.getConfig().getBoolean("multi-server.enable")) {
-		            	String serverName = plugin.getConfig().getString("multi-server.server-name");
-		            	if(!doesServerExist(serverName)) {
-		            		createServer(serverName);
-		            	}
-		            }
-		        } catch(SQLException e) {
-		            e.printStackTrace();
-		            plugin.getLogger().severe("Error when plugin trying to connect with database! WatchLogs are disabled!");
-		            plugin.getServer().getPluginManager().disablePlugin(plugin);
-		        }
-			}	
-    	}.runTaskAsynchronously(plugin);
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                try {
+                    if(connection != null && !connection.isClosed()) {
+                        return;
+                    }
+                    if(useMysql) {
+                        connection = DriverManager.getConnection(url, username, password);
+                        logger.info("Connected to the MySQL database.");
+                    }
+                    
+                    if(!useMysql) {
+                        try {
+                            Class.forName("org.sqlite.JDBC");
+                        } catch(ClassNotFoundException e) {
+                            e.printStackTrace();
+                            plugin.getLogger().severe("SQLite JDBC driver not found! Make sure it is included in the plugin dependencies.");
+                            plugin.getServer().getPluginManager().disablePlugin(plugin);
+                            return;
+                        }
+
+                        File databaseFile = new File(plugin.getDataFolder(), "watchlogs.db");
+                        if(!databaseFile.exists()) {
+                            plugin.getDataFolder().mkdirs();
+                            try {
+                                databaseFile.createNewFile(); 
+                            } catch(IOException e) {
+                                e.printStackTrace();
+                                plugin.getLogger().severe("Could not create SQLite database file.");
+                                plugin.getServer().getPluginManager().disablePlugin(plugin);
+                                return;
+                            }
+                        }
+
+                        try {
+                            connection = DriverManager.getConnection("jdbc:sqlite:" + databaseFile.getPath());
+                            logger.info("Connected to the SQLite database.");
+                        } catch(SQLException e) {
+                            e.printStackTrace();
+                            plugin.getLogger().severe("Error when the plugin is trying to connect with the SQLite database! WatchLogs are disabled!");
+                            plugin.getServer().getPluginManager().disablePlugin(plugin);
+                        }
+                    }             
+                    createTableIfNotExists();
+                    addColumnIfNotExists();
+                    maintainConnection();
+                    runLogPush();
+                    totalLogs = getLastLogId();
+                    if(plugin.getConfig().getBoolean("multi-server.enable")) {
+                        String serverName = plugin.getConfig().getString("multi-server.server-name");
+                        if(!doesServerExist(serverName)) {
+                            createServer(serverName);
+                        }
+                    }
+                } catch(Exception e) {
+                    e.printStackTrace();
+                    plugin.getLogger().severe("Error when the plugin is trying to connect with the database! WatchLogs are disabled!");
+                    plugin.getServer().getPluginManager().disablePlugin(plugin);
+				}
+            }
+        }.runTaskAsynchronously(plugin);
     }
 
     private void reconnect() {
@@ -102,7 +134,7 @@ public class DatabaseManager {
                         reconnect();
                     } else {
                         Statement stmt = connection.createStatement();
-                        stmt.execute("SELECT 1 FROM watchlogs_logs");
+                        stmt.execute("SELECT 1");
                         stmt.close();
                     }
                 } catch(SQLException e) {
@@ -116,52 +148,52 @@ public class DatabaseManager {
 
     private void createTableIfNotExists() {
         String sql = useMysql
-            ? "CREATE TABLE IF NOT EXISTS watchlogs_logs("
-            + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-            + "pseudo TEXT, "
-            + "action TEXT, "
-            + "location TEXT, "
-            + "world TEXT, "
-            + "result TEXT, "
-            + "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);"
-            : "CREATE TABLE IF NOT EXISTS watchlogs_logs("
-            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-            + "pseudo TEXT, "
-            + "action TEXT, "
-            + "location TEXT, "
-            + "world TEXT, "
-            + "result TEXT, "
-            + "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, "
-            + "server VARCHAR(255));";
-        
+                ? "CREATE TABLE IF NOT EXISTS watchlogs_logs("
+                + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+                + "pseudo TEXT, "
+                + "action TEXT, "
+                + "location TEXT, "
+                + "world TEXT, "
+                + "result TEXT, "
+                + "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);"
+                : "CREATE TABLE IF NOT EXISTS watchlogs_logs("
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "pseudo TEXT, "
+                + "action TEXT, "
+                + "location TEXT, "
+                + "world TEXT, "
+                + "result TEXT, "
+                + "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                + "server TEXT);";
+
         String sql3 = "undefined";
         if(plugin.getConfig().getBoolean("use-item-reborn-system")) {
             sql3 = useMysql ? "CREATE TABLE IF NOT EXISTS watchlogs_items("
                     + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-                    + "item_serialize TEXT,"
-                    + "death_id INTEGER,"
+                    + "item_serialize TEXT, "
+                    + "death_id INTEGER, "
                     + "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);" :
                     "CREATE TABLE IF NOT EXISTS watchlogs_items("
                     + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                    + "item_serialize TEXT,"
-                    + "death_id INTEGER,"
+                    + "item_serialize TEXT, "
+                    + "death_id INTEGER, "
                     + "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);";
         }
-        
+
         String sql4 = "CREATE TABLE IF NOT EXISTS watchlogs_accounts("
-                 + "username TEXT(255) UNIQUE, "  
-                 + "password TEXT(255));";
-        
+                + "username TEXT UNIQUE, "
+                + "password TEXT);";
+
         String sql5 = "undefined";
         if(plugin.getConfig().getBoolean("multi-server.enable")) {
             sql5 = "CREATE TABLE IF NOT EXISTS watchlogs_servers("
-                    + "server_name TEXT(255) UNIQUE);";
+                    + "server_name TEXT UNIQUE);";
         }
-        
+
         String sql6 = "undefined";
         if(plugin.getConfig().getBoolean("trace-item.enable")) {
             sql6 = "CREATE TABLE IF NOT EXISTS watchlogs_traceitem("
-                    + "uuid VARCHAR(64) UNIQUE, "
+                    + "uuid TEXT UNIQUE, "
                     + "actions_id TEXT);";
         }
 
@@ -170,7 +202,7 @@ public class DatabaseManager {
             stmt.executeUpdate(sql4);
             logger.info("Table 'watchlogs_logs' checked/created.");
             logger.info("Table 'watchlogs_accounts' checked/created.");
-            
+
             if(!sql3.equals("undefined")) {
                 stmt.executeUpdate(sql3);
                 logger.info("Table 'watchlogs_items' checked/created.");
@@ -188,9 +220,8 @@ public class DatabaseManager {
         } catch(SQLException e) {
             e.printStackTrace();
         }
-        return;
     }
-    
+
     private void createIndexesIfNotExist(Statement stmt) throws SQLException {
         String indexLocation = "CREATE INDEX IF NOT EXISTS idx_location ON watchlogs_logs(location);";
         String indexWorld = "CREATE INDEX IF NOT EXISTS idx_world ON watchlogs_logs(world);";
@@ -209,27 +240,26 @@ public class DatabaseManager {
         stmt.executeUpdate(indexTimestamp);
     }
 
-    
     public void addColumnIfNotExists() throws SQLException {
-    	if(useMysql) {
+        if(useMysql) {
             DatabaseMetaData meta = connection.getMetaData();
             ResultSet resultSet = meta.getColumns(null, null, "watchlogs_logs", "server");
 
-            if(!resultSet.next()) { 
+            if(!resultSet.next()) {
                 String sql = "ALTER TABLE watchlogs_logs ADD COLUMN server VARCHAR(255)";
                 try(Statement stmt = connection.createStatement()) {
                     stmt.executeUpdate(sql);
-                    plugin.getLogger().info("Column server added to watchlogs_logs.");
+                    plugin.getLogger().info("Column 'server' added to watchlogs_logs.");
                 } catch(SQLException e) {
                     e.printStackTrace();
                 }
             } else {
-            	plugin.getLogger().info("Column server already exists in watchlogs_logs.");
+                plugin.getLogger().info("Column 'server' already exists in watchlogs_logs.");
             }
-    	} else {
+        } else {
             boolean columnExists = false;
             String query = "PRAGMA table_info(watchlogs_logs);";
-            
+
             try(Statement stmt = connection.createStatement();
                  ResultSet rs = stmt.executeQuery(query)) {
 
@@ -245,23 +275,22 @@ public class DatabaseManager {
             }
 
             if(!columnExists) {
-                String sql = "ALTER TABLE watchlogs_logs ADD COLUMN server VARCHAR(255)";
+                String sql = "ALTER TABLE watchlogs_logs ADD COLUMN server TEXT";
                 try(Statement stmt = connection.createStatement()) {
                     stmt.executeUpdate(sql);
-                    plugin.getLogger().info("Column server added to watchlogs_logs.");
+                    plugin.getLogger().info("Column 'server' added to watchlogs_logs.");
                 } catch(SQLException e) {
                     e.printStackTrace();
                 }
             } else {
-            	plugin.getLogger().info("Column server already exists in watchlogs_logs.");
+                plugin.getLogger().info("Column 'server' already exists in watchlogs_logs.");
             }
-    	}
-    	return;
+        }
     }
-    
+
     public boolean createServer(String serverName) {
         String query = "INSERT INTO watchlogs_servers(server_name) VALUES(?)";
-        
+
         try(PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setString(1, serverName);
             stmt.executeUpdate();
@@ -271,7 +300,7 @@ public class DatabaseManager {
             return false;
         }
     }
-    
+
     public List<String> getServerInNetwork() {
         List<String> servers = new ArrayList<>();
         String query = "SELECT server_name FROM watchlogs_servers";
@@ -1139,7 +1168,7 @@ public class DatabaseManager {
 		}.runTaskAsynchronously(plugin);
     }
     
-    public void isBlockInteract(String location, String playerName, Consumer<Boolean> callback) {
+    public void isBlockInteract(String location, String playerName, java.util.function.Consumer<Boolean> callback) {
         boolean multiServerEnabled = plugin.getConfig().getBoolean("multi-server.enable");
         String serverName = multiServerEnabled ? plugin.getConfig().getString("multi-server.server-name") : null;
 
@@ -1248,7 +1277,7 @@ public class DatabaseManager {
                      "FROM watchlogs_logs " +
                      "WHERE location = ? AND world = ? " +
                      "AND(action = 'block-place' OR action = 'block-break' OR action = 'block-explosion') " +
-                   (serverName.equals("undefined") ? "" : "AND server = ? ") +
+                 (serverName.equals("undefined") ? "" : "AND server = ? ") +
                      "ORDER BY id DESC " +
                      "LIMIT " + limit;
         
@@ -1301,7 +1330,7 @@ public class DatabaseManager {
                      "FROM watchlogs_logs " +
                      "WHERE location = ? AND world = ? " +
                      "AND(action = 'container-transaction' OR action = 'container-open') " +
-                   (serverName.equals("undefined") ? "" : "AND server = ? ") +
+                 (serverName.equals("undefined") ? "" : "AND server = ? ") +
                      "ORDER BY id DESC";
 
         new BukkitRunnable() {
