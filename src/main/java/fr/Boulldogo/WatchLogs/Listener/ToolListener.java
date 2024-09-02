@@ -277,8 +277,20 @@ public class ToolListener implements Listener {
     }
     
     public boolean isContainer(Block block) {
-        BlockState state = block.getState();
-        return state instanceof Container;
+    	if(plugin.isVersionLessThanOrEqual("1.8.9")) {
+    	    Material type = block.getType();
+
+    	    return type == Material.CHEST ||
+    	           type == Material.TRAPPED_CHEST ||
+    	           type == Material.DISPENSER ||
+    	           type == Material.DROPPER ||
+    	           type == Material.FURNACE ||
+    	           type == Material.HOPPER ||
+    	           type == Material.BREWING_STAND;
+    	} else {
+            BlockState state = block.getState();
+            return state instanceof Container;
+    	}
     }
     
 	@EventHandler
