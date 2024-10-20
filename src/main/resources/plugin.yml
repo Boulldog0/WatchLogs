@@ -1,7 +1,7 @@
 name: WatchLogs
 author: Boulldogo
 main: fr.Boulldogo.WatchLogs.WatchLogsPlugin
-version: 1.4.2
+version: 1.4.3
 api-version: 1.13
 soft-depends: [LuckPerms]
 description: Advanced logging plugin for minecraft server

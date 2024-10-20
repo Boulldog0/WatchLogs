@@ -18,6 +18,7 @@ messages:
     - "&7/wl search <settings> - Searches logs with the specified settings."
     - "&7/wl website <givecode/deleteaccount/port/2FA/unbanip> <args> - Command for the website."
     - "&7/wl traceitem <search/give/settrace/removetrace/check> <settings> - Commands of traceitem feature."
+    - "&7/wl spy <add/remove> <player> (action(only add)) - Spy specifics players with specific actions."
     - "&6========================================================"
   #Message confirming that the log tool has been correctly removed.
   tool-correctly-removed: "&aThe log tool has been correctly removed."
@@ -27,6 +28,7 @@ messages:
   you-have-item-in-hand: "&cYou have an item in your hand."
   #Usage message for the /wl page command.
   usage-page: "&cUsage: /wl page <number>"
+  usage-spy: "&cUsage : /wl spy <add/remove> <player> (<action(s)>)(Only add)"
   #Usage message for the /wl website commande
   usage-website: "&cUsage : /wl website <givecode/deleteaccount/port/2FA/unbanip> <args>"
   #Error message when the page number is not positive.
@@ -57,14 +59,19 @@ messages:
   import-error: "&cAn error has occurred when trying to import datas !"
   #Message sent when item is correctly given.
   item-correctly-given: "&2Item for given ID has been correctly given."
+  player-not-found: "&cError : Unknow player of offline player !"
+  player-removed: "&cPlayer removed with success !"
   #Error message when the given ID is higher than the last ID.
   given-id-highest: "&cGiven ID is higher than the last id."
   #Error message when the world of the given ID does not exist.
   world-not-exist: "&cThe world of the given id does not exist. Please retry when the world of this id is loaded."
+  action-spying-disabled: "&cError : Action <%a> disabled in the context of spy !"
   #Confirmation message for successful teleportation.
   correctly-teleported: "&aYou have correctly teleported to action %s!"
+  unknow-action: "&cError : unknow action <%a> !"
   #Usage message for the /wl search command.
   usage-search: "&cUsage: /wl search <settings>"
+  player-added: "&aPlayer added in your spy list with success !"
   #Usage message for the /wl giveitem command.
   usage-giveitem: "&cUsage : /wl giveitem <id>"
   #Usage message for the /wl traceitem command
@@ -87,6 +94,8 @@ messages:
   invalid-argument: "&cInvalid argument: "
   #Message displayed when no matching entries are found.
   no-matching-entries: "&cNo matching entries found."
+  player-already-spyed: "&cYou already spy this player !"
+  player-not-spyed: "&cYou dont spy this player !"
   #Message displaying found logs with page information.
   logs-found: "&aLogs found (Page %d/%d) (Limit: %d):"
   #Instruction for typing the next page command.

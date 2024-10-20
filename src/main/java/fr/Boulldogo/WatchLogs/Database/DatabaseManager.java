@@ -12,7 +12,9 @@ import java.util.logging.Logger;
 
 import javax.annotation.Nullable;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.json.JSONObject;
@@ -23,6 +25,7 @@ import fr.Boulldogo.WatchLogs.Utils.ActionUtils;
 import fr.Boulldogo.WatchLogs.Utils.BCryptUtils;
 import fr.Boulldogo.WatchLogs.Utils.ItemDataSerializer;
 import fr.Boulldogo.WatchLogs.Utils.LogEntry;
+import fr.Boulldogo.WatchLogs.Utils.PlayerSession;
 
 public class DatabaseManager {
 
@@ -36,6 +39,7 @@ public class DatabaseManager {
 	public ItemDataSerializer dataSerializer;
 	private final List<LogEntry> logs = new ArrayList<>();
 	int totalLogs = 0;
+	private String prefix;
 	
     public DatabaseManager(String url, String username, String password, Logger logger, boolean useMysql, WatchLogsPlugin plugin, ItemDataSerializer dataSerializer) {
         this.url = url;
@@ -45,6 +49,7 @@ public class DatabaseManager {
         this.useMysql = useMysql;
         this.plugin = plugin;
         this.dataSerializer = dataSerializer;
+        this.prefix = plugin.getConfig().getBoolean("use-prefix") ? translateString(plugin.getConfig().getString("prefix")) : "";
     }
 
     public void connect() {
@@ -564,6 +569,7 @@ public class DatabaseManager {
         return false;
     }
     
+    @Nullable
     public List<ItemStack> getItemsByDeathId(int deathId) {
         List<ItemStack> items = new ArrayList<>();
         String sql = "SELECT item_serialize FROM watchlogs_items WHERE death_id = ?";
@@ -1034,6 +1040,17 @@ public class DatabaseManager {
 			public void run() {
 		        if(plugin.getConfig().getBoolean("discord.discord-module-enabled")) {
 		            logToDiscord(pseudo, action, location, world, result, serverName);
+		        }
+		        for(Player player : Bukkit.getOnlinePlayers()) {
+		        	if(player.hasPermission("watchlogs.spy")) {
+		        		PlayerSession session = plugin.getPlayerSession(player);
+		        		Player p = Bukkit.getPlayer(pseudo);
+		        		if(session.isPlayerSpyed(p)) {
+		        			if(session.isActionEnabledForPlayer(p, action)) {
+		        				player.sendMessage(prefix + ChatColor.GRAY + "[" + ChatColor.RED + "Spy" + ChatColor.GRAY + "] -> " + ChatColor.DARK_RED + pseudo + ChatColor.RED + " do " + ChatColor.DARK_RED + action +  ChatColor.RED + " (" + ChatColor.DARK_RED + result +  ChatColor.RED + ")");
+		        			}
+		        		}
+		        	}
 		        }
 			}
 		}.runTaskAsynchronously(plugin);

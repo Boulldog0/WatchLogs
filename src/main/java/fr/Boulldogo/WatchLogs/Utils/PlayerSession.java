@@ -1,10 +1,15 @@
 package fr.Boulldogo.WatchLogs.Utils;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
 
 public class PlayerSession {
+	
+	private Map<Player, String[]> spyedPlayers = new HashMap<>();
     private String blockLocation;
     private OfflinePlayer player;
     private int currentPage;
@@ -84,5 +89,33 @@ public class PlayerSession {
     
     public void setSessionActivity(boolean isActive) {
     	this.isActive = isActive;
+    }
+    
+    public void addSpyPlayer(Player player, String[] actions) {
+    	spyedPlayers.put(player, actions);
+    }
+    
+    public void removeSpyPlayer(Player player) {
+    	spyedPlayers.remove(player);
+    }
+    
+    public Map<Player, String[]> getSpyedPlayers() {
+    	return spyedPlayers;
+    }
+    
+    public boolean isPlayerSpyed(Player player) {
+    	return !spyedPlayers.isEmpty() && spyedPlayers.containsKey(player);
+    }
+    
+    public boolean isActionEnabledForPlayer(Player player, String action) {
+    	if(!isPlayerSpyed(player)) return false;
+    	
+    	String[] actions = spyedPlayers.get(player);
+    	for(String act : actions) {
+    		if(act.equals(action)) {
+    			return true;
+    		}
+    	}
+    	return false;
     }
 }

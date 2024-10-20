@@ -95,6 +95,34 @@ enable-logs:
   website-logs-search: true
   website-register: true
   trace-item-action: true
+ 
+#[EN] Enable or disable specific spy logs. [FR] Activer ou désactiver la surveillance de logs spécifiques.
+spy-enabled-actions:
+  join: false
+  leave: false
+  teleport: true 
+  block-place: false
+  block-break: false
+  container-open: false
+  container-transaction: true 
+  item-drop: false
+  item-pickup: true 
+  item-break: false
+  player-death: true 
+  player-death-loot: false
+  commands: true 
+  send-message: false
+  interact-item: false
+  interact-block: false
+  interact-entity: false
+  block-explosion: true
+  json-import: true
+  json-export: true
+  website-login: true
+  website-logout: true
+  website-logs-search: true
+  website-register: true
+  trace-item-action: false
   
 #[EN] Modify settings of the website. [FR] Modifiez les paramètres du site internet.
 website:

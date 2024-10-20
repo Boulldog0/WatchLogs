@@ -772,6 +772,84 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                 player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.import-error")));
                 return true;
             }
+        } else if(subCommand.equals("spy")) {
+            if(!player.hasPermission("watchlogs.spy")) {
+                player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.have-not-permission")));
+                return true;
+            }
+            
+            if(args.length < 1) {
+                player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.usage-spy")));
+                return true;
+            }
+            String arg = args[1];
+            
+            if(!arg.equals("add") && !arg.equals("remove")) {
+                player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.usage-spy")));
+                return true;
+            }
+            
+            if(arg.equals("add")) { 
+                if(args.length < 4) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.usage-spy")));
+                    return true;
+                }
+                
+                String pName = args[2];
+                
+                if(Bukkit.getPlayer(pName) == null || !Bukkit.getPlayer(pName).isOnline()) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.player-not-found")));
+                    return true;
+                }
+                
+                Player p = Bukkit.getPlayer(pName);
+                
+                String actions = args[3];
+                String[] action = actions.split("\\,");
+                
+                for(String act : action) {
+                	if(!ActionUtils.actions().contains(act)) {
+                        player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.unknow-action").replace("%a", act)));
+                        return true;
+                	} else if(!isSpyActionEnable(act)) {
+                        player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.action-spying-disabled").replace("%a", act)));
+                        return true;
+                	}
+                }
+                
+                PlayerSession session = plugin.getPlayerSession(player);
+                if(session.isPlayerSpyed(p)) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.player-already-spyed")));
+                    return true;
+                }
+                
+                session.addSpyPlayer(p, action);
+                player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.player-added")));
+                return true;
+            } else if(arg.equals("remove")) {
+                if(args.length < 3) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.usage-spy")));
+                    return true;
+                }
+                
+                String pName = args[2];
+                
+                if(Bukkit.getPlayer(pName) == null || !Bukkit.getPlayer(pName).isOnline()) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.player-not-found")));
+                    return true;
+                }
+                
+                Player p = Bukkit.getPlayer(pName);
+                
+                PlayerSession session = plugin.getPlayerSession(player);
+                if(!session.isPlayerSpyed(p)) {
+                    player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.player-not-spyed")));
+                    return true;
+                }
+                session.removeSpyPlayer(p);
+                player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.player-removed")));
+                return true;
+            }
         } else if(subCommand.equals("page")) {
             if(!player.hasPermission("watchlogs.page")) {
                 player.sendMessage(prefix + translateString(plugin.getLang().getString("messages.have-not-permission")));
@@ -957,7 +1035,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
         List<String> completions = new ArrayList<>();
 
         if(args.length == 1) {
-            List<String> subCommands = Arrays.asList("help", "tool", "database", "page", "tpto", "reload", "search", "import", "export", "giveitem", "gdeath", "website", "traceitem");
+            List<String> subCommands = Arrays.asList("help", "spy", "tool", "database", "page", "tpto", "reload", "search", "import", "export", "giveitem", "gdeath", "website", "traceitem");
             String currentArg = args[0].toLowerCase();
             completions = subCommands.stream()
                 .filter(subCommand -> subCommand.startsWith(currentArg))
@@ -979,6 +1057,8 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                     break;
                 case "website":
                 	completions = Arrays.asList("givecode", "deleteaccount", "port", "2FA", "unbanip");
+                case "spy":
+                	completions = handleSpyTabCompletion(args);
                 default:
                     break;
             }
@@ -1056,6 +1136,34 @@ public class MainCommand implements CommandExecutor, TabCompleter{
                 .filter(param -> param.startsWith(currentArg))
                 .sorted()
                 .collect(Collectors.toList());
+        }
+
+        return completions;
+    }
+    
+    private List<String> handleSpyTabCompletion(String[] args) {
+        List<String> completions = new ArrayList<>();
+        
+        if(args.length == 2) {
+        	completions = Arrays.asList("add", "remove");
+        } else {
+        	if(args.length == 3) {
+        		for(Player p : Bukkit.getOnlinePlayers()) {
+        			completions.add(p.getName());
+        		}
+        	} else if(args.length == 4) {
+        		if(args[3].endsWith(",")) {
+        			for(String action : ActionUtils.actions()) {
+        				if(!args[3].contains(action + ",")) {
+            				completions.add(args[3] + action);
+        				}
+        			}
+        		} else {
+        			for(String action : ActionUtils.actions()) {
+        				completions.add(action);
+        			}
+        		}
+        	}
         }
 
         return completions;
@@ -1290,7 +1398,25 @@ public class MainCommand implements CommandExecutor, TabCompleter{
     	return Arrays.asList("sharpness", "unbreaking", "protection", "fire_aspect", "efficiency", "fortune", "looting",
     			"power", "punch", "infinity", "knockback", "respiration", "aqua_affinity", "mending");
     }
+    
+	public boolean isLogEnable(String logName) {
+		if(plugin.getConfig().contains("enable-logs." + logName)) {
+			return plugin.getConfig().getBoolean("enable-logs." + logName);
+		} else {
+			List<String> plugins = plugin.getLinkedPlugins();
+			for(String p : plugins) {
+				if(plugin.getConfig().contains("plugins-integrations." + p + "." + logName)) {
+					return plugin.getConfig().getBoolean("plugins-integrations." + p + "." + logName);
+				}
+			}
+		}
+		return false;
+	}
 
+    private boolean isSpyActionEnable(String s) {
+    	if(!isLogEnable(s)) return false;
+    	return plugin.getConfig().getBoolean("spy-enabled-actions." + s);
+    }
 
     public boolean isValidSubcommand(String s) {
         return s.equals("help")
@@ -1300,6 +1426,7 @@ public class MainCommand implements CommandExecutor, TabCompleter{
             || s.equals("tpto")
             || s.equals("reload")
             || s.equals("export")
+            || s.equals("spy")
             || s.equals("import")
             || s.equals("traceitem")
             || s.equals("gdeath")

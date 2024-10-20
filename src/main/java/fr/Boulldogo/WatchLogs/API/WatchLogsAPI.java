@@ -34,9 +34,13 @@ public class WatchLogsAPI {
 				plugin.getLogger().warning("A plugin tryed to add custom action, but an action with this name is already loaded !");
 				return;
 			}
+			
+			try {
+			   plugin.processPluginRegistry(requestPlugin.getDescription().getName());
+			} catch(Exception e) {}
+			
 			ActionUtils.customActions.put(actionName, formattedName);
-			
-			
+				
 			if(!plugin.getServerList().contains(requestPlugin.getDescription().getName())) {
 				plugin.addServer(requestPlugin.getDescription().getName());
 			}

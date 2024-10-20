@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -559,5 +560,9 @@ public class MinecraftListener implements Listener {
 	
 	public boolean isLogEnable(String logName) {
 		return plugin.getConfig().getBoolean("enable-logs." + logName);
+	}
+	
+    public String translateString(String s) {
+		return ChatColor.translateAlternateColorCodes('&', s);
 	}
 }

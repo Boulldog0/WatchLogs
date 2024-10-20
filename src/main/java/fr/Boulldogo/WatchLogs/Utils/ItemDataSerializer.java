@@ -34,7 +34,13 @@ public class ItemDataSerializer {
     }
 
     private boolean isPersistentDataContainerAvailable() {
-    	return plugin.getSpigotVersionAsInt() >= 1130;
+    	try {
+    		@SuppressWarnings("unused")
+			Class<?> c = Class.forName("org.bukkit.persistence.PersistentDataContainer");
+    		return true;
+    	} catch(ClassNotFoundException e) {
+    		return false;
+    	}
     }
 
     public void serializeItemStack(ItemStack itemStack, Consumer<String> callback) {
@@ -127,12 +133,14 @@ public class ItemDataSerializer {
                         meta.addEnchant(enchantment, entry.getValue(), true);
                     }
                 }
-
-                if(usePersistentDataContainer) {
-                    setNBTToPersistentData(meta, nbtTags);
-                } else {
-                    setNBTUsingNBTAPI(itemStack, nbtTags);
-                }
+                
+                try {
+                    if(usePersistentDataContainer) {
+                        setNBTToPersistentData(meta, nbtTags);
+                    } else {
+                        setNBTUsingNBTAPI(itemStack, nbtTags);
+                    }
+                } catch(Exception e) {}
 
                 if(meta instanceof SkullMeta) {
                     SkullMeta skullMeta =(SkullMeta) meta;

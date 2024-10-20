@@ -57,6 +57,7 @@ public class WatchLogsPlugin extends JavaPlugin {
 	private final List<String> servers = new ArrayList<>();
 	private A2FUtils A2fUtils;
 	private WebServer webServer;
+	public List<String> linkedPlugins;
     
 	public void onEnable() {
 		this.getLogger().info("==============[Enable Start of WatchLogs]==============");
@@ -255,6 +256,15 @@ public class WatchLogsPlugin extends JavaPlugin {
             getLogger().info("Discord bot shut down.");
         }
         return;
+	}
+	
+	public void processPluginRegistry(String pluginName) {
+		if(this.linkedPlugins.contains(pluginName)) return;
+		this.linkedPlugins.add(pluginName);
+	}
+	
+	public List<String> getLinkedPlugins() {
+		return linkedPlugins;
 	}
 	
 	public String getVersion() {

@@ -18,6 +18,7 @@ messages:
     - "&7/wl search <paramètres> - Recherche des logs avec les paramètres spécifiés."
     - "&7/wl website <givecode/deleteaccount/port/2FA/unbanip> <args> - Commandes relatives au site internet."
     - "&7/wl traceitem <search/give/settrace/removetrace/check> <settings> - Commandes de la feature de tracage d'item'."
+    - "&7/wl spy <add/remove> <joueur> (action(uniquement add)) - Espionner un joueur spécifique avec des actions spécifiques."
     - "&6========================================================"
   #Message indiquant que l'outil de logs a été correctement supprimé.
   tool-correctly-removed: "&aL'outil de logs à correctement été supprimé."
@@ -35,6 +36,7 @@ messages:
   usage-tpto: "&cUtilisation : /wl tpto <id>"
   #Message d'utilisation incorrecte de la commande /wl giveitem.
   usage-giveitem: "&cUtilisation : /wl giveitem <id>"
+  usage-spy: "&cUtilisation : /wl spy <add/remove> <joueur> (<action(s)>)(Que add)"
   #Message d'utilisation incorrecte de la commande /wl website
   usage-website: "&cUtilisation : /wl website <givecode/deleteaccount/port/2FA/unbanip> <args>"
   #Message d'erreur envoyé lorsqu'un joueur tente d'utiliser le /wl giveitem alors que le module est désactivé.
@@ -47,6 +49,7 @@ messages:
   id-number-positive: "&cL'ID fourni doit être positif."
   #Message d'utilisation incorrecte de la commande /wl export
   usage-export: "&cUtilisation : /wl export <nombre> <all/paramètres>"
+  player-not-found: "&cErreur : joueur inconnu ou non connecté !"
   #Message d'utilisation incorrecte de la commande /wk import'.
   usage-import: "&cUtilisation : /wl import <fichier(sans .json)> <utilisation des IDs originaux(true/false)>"
   #Message envoyé lorsqu'une commande necessite une valeur booleane et que le joueur n'en mets pas.
@@ -73,8 +76,14 @@ messages:
   world-not-exist: "&cLe monde de l'action avec l'id donné n'existe pas. Veuillez réessayer lorsque le monde de cet id est chargé."
   #Message de confirmation de téléportation réussie.
   correctly-teleported: "&aVous avez correctement été téléporté à l'action %s !"
+  unknow-action: "&cErreur : l'action <%a> est invalide !"
   #Message d'utilisation incorrecte de la commande /wl search.
   usage-search: "&cUtilisation : /wl search <paramètres>"
+  player-added: "&aJoueur ajouté à votre liste de spy avec succès !"
+  player-already-spyed: "&cVous surveillez déjà ce joueur !"
+  player-not-spyed: "&cVous ne surveillez pas ce joueur !"
+  player-removed: "&aJoueur retiré avec succès !"
+  action-spying-disabled: "&cErreur : L'action <%a> est désactivée dans le contexte de la surveillance !"
   #Message d'erreur lorsque le rayon spécifié est trop grand.
   radius-too-large: "&cLe rayon donné est trop grand."
   #Message d'erreur en cas de valeur de rayon invalide.
