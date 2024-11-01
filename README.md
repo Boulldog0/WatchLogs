@@ -143,9 +143,9 @@ WatchLogs is released under the [GNU General Public License v3.0](https://www.gn
 
 ✅ 250 Downloads
 
-❌ 500 Downloads
+✅ 500 Downloads
 
-❌ 1000 Downloads
+✅ 1000 Downloads
 
 ❌ 2000 Downloads
 
@@ -223,3 +223,19 @@ Usage : `boolean enable = api.customActionIsEnable("item-drop");`
 -> Required settings : Location
 
 Usage : `String loc = api.getFormattedLocationString(Location);`
+
+### - `traceItemEnabled()` (boolean function) : Return true if the traceitem feature is enable in the server
+
+Usage : `boolean traceItemEnable = api.traceItemEnabled();`
+
+### - `createCustomTracedItem()` (ItemStack function) : Return a trace itemstack if trace item feature is enable, or the same itemstack if trace item feature is disable.
+
+-> Required settings : ItemStack
+
+Usage : `ItemStack tracedItem = api.createCustomTracedItem(ItemStack);`
+
+### - 'getUUIDForTracedItem()` (string function) : Return the UUID of trace item of the given itemstack, or null if the item is not traced
+
+-> Required settings : ItemStack
+
+Usage : `String UUID = api.getUUIDForTracedItem(ItemStack);`
