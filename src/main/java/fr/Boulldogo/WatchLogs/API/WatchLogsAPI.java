@@ -9,6 +9,7 @@ import fr.Boulldogo.WatchLogs.WatchLogsPlugin;
 import fr.Boulldogo.WatchLogs.Database.DatabaseManager;
 import fr.Boulldogo.WatchLogs.Utils.ActionUtils;
 import fr.Boulldogo.WatchLogs.Utils.ItemDataSerializer;
+import fr.Boulldogo.WatchLogs.Utils.TraceItemUtils;
 
 public class WatchLogsAPI {
 	
@@ -88,6 +89,26 @@ public class WatchLogsAPI {
 	        	});
 	        }
 		} 
+	}
+	
+	public boolean traceItemEnabled() {
+		return plugin.getConfig().getBoolean("trace-item.enable");
+	}
+	
+	public ItemStack createCustomTracedItem(ItemStack stack) {
+    	if(!traceItemEnabled()) {
+    		return stack;
+    	}
+    	
+	    TraceItemUtils tiu = plugin.getTraceItemUtils();
+	    String UUID = tiu.createUUIDForItem();
+
+	   return tiu.setTagToItemStack(stack, UUID);
+	}
+	
+	public String getUUIDForTracedItem(ItemStack stack) {
+	    TraceItemUtils tiu = plugin.getTraceItemUtils();
+		return tiu.getWltiTagValue(stack);
 	}
 	
 	public boolean customActionIsEnable(String pluginName, String actionName) {
